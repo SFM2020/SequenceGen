@@ -103,3 +103,39 @@ int deleteVerticesByIdx(MyMesh &_mesh, const std::vector<int> &_v_idxs)
 	return 0;
 }
 //=============================================================================
+int deleteVerticesByNormal(MyMesh &_mesh)
+{
+	_mesh.request_face_normals();
+	_mesh.request_vertex_normals();
+	_mesh.update_face_normals();
+	_mesh.update_vertex_normals();
+
+	MyMesh::ConstVertexIter v_it;
+	MyMesh::ConstVertexIter v_end = _mesh.vertices_end();
+
+	for (v_it = _mesh.vertices_begin(); v_it != v_end; ++v_it)
+	{
+		MyMesh::Normal normal = _mesh.normal(v_it);
+
+		// Remove vectices normal direction pointing away from the camera
+		if (normal[2] > 0.f)
+		{
+			_mesh.delete_vertex(v_it, true);
+		}
+	}
+
+	_mesh.garbage_collection();
+
+	return 0;
+}
+//=============================================================================
+int updateVertexNormals(MyMesh &_mesh)
+{
+	_mesh.request_face_normals();
+	_mesh.request_vertex_normals();
+	_mesh.update_face_normals();
+	_mesh.update_vertex_normals();
+
+	return 0;
+}
+//=============================================================================

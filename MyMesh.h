@@ -50,3 +50,7 @@ int deleteVerticesByColor(MyMesh &_mesh, const unsigned char *color,
 //=============================================================================
 int deleteVerticesByIdx(MyMesh &_mesh, const std::vector<int> &_v_idxs);
 //=============================================================================
+int deleteVerticesByNormal(MyMesh &_mesh);
+//=============================================================================
+int updateVertexNormals(MyMesh &_mesh);
+//=============================================================================

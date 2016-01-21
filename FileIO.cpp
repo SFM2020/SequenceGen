@@ -70,3 +70,20 @@ int writeVector(const std::vector<int> &_v, const char* _filename)
 	return 0;
 }
 //=============================================================================
+int readVector(const char* _filename, float* _v, int &_size)
+{
+	std::ifstream ifs(_filename);
+
+	ifs >> _size;
+
+	_v = new float[_size];
+	for (int i = 0; i < _size; i++)
+	{
+		ifs >> _v[i];
+	}
+
+	ifs.close();
+
+	return 0;
+}
+//=============================================================================

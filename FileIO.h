@@ -10,6 +10,7 @@ int writeMesh(MyMesh& _mesh, const char* _filename,
 //=============================================================================
 int readMatrixXi(Eigen::MatrixXi &_matrix, const char* _filename);
 //=============================================================================
-//template <typename T>
 int writeVector(const std::vector<int> &_v, const char* _filename);
+//=============================================================================
+int readVector(const char* _filename, float* _v, int &_size);
 //=============================================================================
