@@ -16,6 +16,7 @@
 
 // Light parameters
 #define USE_GL_LIGHT		"use_gl_light"
+#define USE_SH_LIGHT		"use_sh_light"
 #define LIGHT_AMBIENT		"light_ambient"
 #define LIGHT_POSITION		"light_position"
 #define LIGHT_INTENSITY		"light_intensity"
@@ -59,7 +60,8 @@ namespace parameters {
 			eye = { 0.f, 0.f, 0.f };//{ 27.5228f, 3.62954f, 0.f};
 
 			// Light parameters
-			use_gl_light = true;
+			use_gl_light = false;
+			use_sh_light = false;
 			light_ambient = { 0.1f, 0.1f, 0.1f, 1.f };
 			light_position = { -1.f, 0.f, 1.f, 0.f };
 			light_intensity = { 1.f, 1.f, 1.f, 1.f };
@@ -67,13 +69,14 @@ namespace parameters {
 
 			// I/O parameters
 			//mesh_prefix = "C:/Users/Qi/Desktop/generated/meshes/mesh_";	
-			mesh_prefix = "C:/Users/Qi/Documents/GitHub/_PangaeaResults/first_attempt/mesh_pyramid/mesh";
+			mesh_prefix = "C:/Users/Qi/Documents/GitHub/_PangaeaResults/low_res_gray/mesh_pyramid/mesh";
+			//mesh_prefix = "C:/Users/Qi/Desktop/generated/templates/cropped/template_12500_";
 			// "C:/Users/Qi/Desktop/generated/meshes/_sphere_";
 			//mesh_suffix = ".ply";
 			mesh_suffix = "_level00.obj";
 			mesh_first_idx = 1;// 180;
 			num_frames = 200;
-			image_prefix = "C:/Users/Qi/Desktop/generated/images/result";
+			image_prefix = "C:/Users/Qi/Desktop/generated/images/result_";
 			image_suffix = ".png";
 			image_first_idx = 1;
 			sh_coeff_filename = "C:/Users/Qi/Desktop/generated/images/x_-1_z_1_a_0.1/_sh_coeff.txt";
@@ -94,6 +97,7 @@ namespace parameters {
 
 		// Light parameters
 		bool use_gl_light;
+		bool use_sh_light;
 		vector<float> light_ambient;
 		vector<float> light_position;
 		vector<float> light_intensity;
@@ -168,6 +172,11 @@ namespace parameters {
 			if (!fs[USE_GL_LIGHT].empty())
 			{
 				fs[USE_GL_LIGHT] >> use_gl_light;
+			}
+
+			if (!fs[USE_SH_LIGHT].empty())
+			{
+				fs[USE_SH_LIGHT] >> use_sh_light;
 			}
 
 			if (!fs[LIGHT_AMBIENT].empty())

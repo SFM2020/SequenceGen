@@ -26,6 +26,7 @@ vector<float> GLViewer::light_intensity = GLViewer::params.light_intensity;
 vector<float> GLViewer::background_colour = GLViewer::params.background_colour;
 
 bool GLViewer::use_gl_light = GLViewer::params.use_gl_light;
+bool GLViewer::use_sh_light = GLViewer::params.use_sh_light;
 
 /* FILENAME */
 string GLViewer::mesh_prefix = GLViewer::params.mesh_prefix;
@@ -77,7 +78,7 @@ void GLViewer::initGLUT(int *argc, char **argv)
 
 	glewInit();
 
-	if (USE_GL_LIGHT)
+	if (use_gl_light)
 	{
 		/* Enable a single OpenGL light. */
 		glLightfv(GL_LIGHT0, GL_POSITION, light_position.data());
@@ -176,15 +177,19 @@ void GLViewer::drawModel()
 
 			MyMesh::Color c = mesh.color(*fv_it);
 
+			float red = c[0];
+			float green = c[1];
+			float blue = c[2];
+
 			//float red = ((float)c[0]) / 255.f;
-			//float green = ((float)c[1]) / 255.f;
+			//float green = ((float)c[1]) / 255.f;	
 			//float blue = ((float)c[2]) / 255.f;
 
-			float red = 0.796078f;
-			float green = 0.521569f;
-			float blue = 0.435294f;			  
+			//float red = 0.796078f;
+			//float green = 0.521569f;
+			//float blue = 0.435294f;			  
 
-			if (!use_gl_light)
+			if (!use_gl_light && use_sh_light)
 			{
 				float irradiance = getSHIrradiance(normal);
 
@@ -224,10 +229,13 @@ void GLViewer::initialize(int *argc, char **argv)
 	mesh.request_vertex_normals();
 
 	mesh_read_opt += OpenMesh::IO::Options::VertexColor;
+	mesh_read_opt += OpenMesh::IO::Options::VertexNormal;
 	//mesh_read_opt += OpenMesh::IO::Options::Binary;
 	//mesh_read_opt += OpenMesh::IO::Options::LSB;
 
-	if (use_gl_light)
+	//params.load(argv[1]);
+
+	if (!use_gl_light && use_sh_light)
 	{
 		readVector(sh_coeff_filename.c_str(), sh_coeff, n_sh_coeff);
 		sh_order = sqrt(n_sh_coeff) - 1;
@@ -243,7 +251,7 @@ void GLViewer::destroy()
 {
 	delete pixel_data;
 
-	if (use_gl_light)
+	if (!use_gl_light && use_sh_light)
 	{
 		delete[] sh_coeff;
 	}

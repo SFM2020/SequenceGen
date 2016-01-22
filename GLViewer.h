@@ -50,6 +50,7 @@ private:
 	static vector<float> background_colour;
 
 	static bool use_gl_light;
+	static bool use_sh_light;
 
 	/* FILENAME */
 	static string mesh_prefix;

@@ -153,7 +153,6 @@
   <ItemGroup>
     <ClCompile Include="FileIO.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MyMesh.cpp" />
     <ClCompile Include="GLViewer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

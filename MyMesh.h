@@ -22,7 +22,7 @@ struct Traits
 	typedef int TextureIndex;
 
 	/// The default color type is OpenMesh::Vec3uc.
-	typedef OpenMesh::Vec3uc Color;
+	typedef OpenMesh::Vec3f Color;
 
 #ifndef DOXY_IGNORE_THIS
 	VertexTraits{};
@@ -38,19 +38,4 @@ struct Traits
 };
 //=============================================================================
 typedef OpenMesh::PolyMesh_ArrayKernelT<Traits> MyMesh;
-//=============================================================================
-int updateColors(MyMesh &_mesh, const unsigned char *_color);
-//=============================================================================
-int updateColors(MyMesh &_mesh, const Eigen::MatrixXi _colors);
-//=============================================================================
-int updateColorsOrder(MyMesh &_mesh);
-//=============================================================================
-int deleteVerticesByColor(MyMesh &_mesh, const unsigned char *color,
-	std::vector<int> &_deleted_v_idxs);
-//=============================================================================
-int deleteVerticesByIdx(MyMesh &_mesh, const std::vector<int> &_v_idxs);
-//=============================================================================
-int deleteVerticesByNormal(MyMesh &_mesh);
-//=============================================================================
-int updateVertexNormals(MyMesh &_mesh);
 //=============================================================================
