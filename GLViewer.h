@@ -60,7 +60,6 @@ private:
 	static string image_prefix;
 	static string image_suffix;
 	static unsigned int image_first_idx;
-	static string sh_coeff_filename;
 
 	//=========================================================================
 
@@ -77,8 +76,7 @@ private:
 	static int window_id;
 
 	static int sh_order;
-	static int n_sh_coeff;
-	static float* sh_coeff;
+	static vector<float> sh_coeff;
 
 	//=========================================================================
 
@@ -86,6 +84,7 @@ private:
 
 	/* INITIALIZATION METHODS */
 	static void initGLUT(int *argc, char **argv);
+	static void initParameters(const char* _filename);
 
 	/* GLUT FUNCTIONS */
 	static void display(void);

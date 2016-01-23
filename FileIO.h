@@ -14,3 +14,5 @@ int writeVector(const std::vector<int> &_v, const char* _filename);
 //=============================================================================
 int readVector(const char* _filename, float* _v, int &_size);
 //=============================================================================
+int readFloatVector(const char* _filename, std::vector<float> &_v);
+//=============================================================================

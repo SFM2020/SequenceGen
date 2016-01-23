@@ -1,48 +1,42 @@
 #include "GLViewer.h"
 //=============================================================================
-/**** CONSTANTS****/
-
 /* WINDOW PARAMETERS */
 const char* GLViewer::WINDOW_TITLE = "Sequence Render";
 
 parameters::Parameters GLViewer::params;
 
-int GLViewer::image_width = GLViewer::params.image_width;
-int GLViewer::image_height = GLViewer::params.image_height;
+/* IMAGE SIZE */
+int GLViewer::image_width;
+int GLViewer::image_height;
 
 /* PERSPECTIVE PROPERTIES */
-GLfloat GLViewer::frustum_left = GLViewer::params.frustum_left;
-GLfloat GLViewer::frustum_right = GLViewer::params.frustum_right;
-GLfloat GLViewer::frustum_bottom = GLViewer::params.frustum_bottom;
-GLfloat GLViewer::frustum_top = GLViewer::params.frustum_top;
-GLfloat GLViewer::frustum_near = GLViewer::params.frustum_near;
-GLfloat GLViewer::frustum_far = GLViewer::params.frustum_far;
-vector<float> GLViewer::eye = GLViewer::params.eye;
+GLfloat GLViewer::frustum_left;
+GLfloat GLViewer::frustum_right;
+GLfloat GLViewer::frustum_bottom;
+GLfloat GLViewer::frustum_top;
+GLfloat GLViewer::frustum_near;
+GLfloat GLViewer::frustum_far;
+vector<float> GLViewer::eye;
 
 /* LIGHT PARAMETERS */
-vector<float> GLViewer::light_ambient = GLViewer::params.light_ambient;
-vector<float> GLViewer::light_position = GLViewer::params.light_position;
-vector<float> GLViewer::light_intensity = GLViewer::params.light_intensity;
-vector<float> GLViewer::background_colour = GLViewer::params.background_colour;
+vector<float> GLViewer::light_ambient;
+vector<float> GLViewer::light_position;
+vector<float> GLViewer::light_intensity;
+vector<float> GLViewer::background_colour;
 
-bool GLViewer::use_gl_light = GLViewer::params.use_gl_light;
-bool GLViewer::use_sh_light = GLViewer::params.use_sh_light;
+bool GLViewer::use_gl_light;
+bool GLViewer::use_sh_light;
 
 /* FILENAME */
-string GLViewer::mesh_prefix = GLViewer::params.mesh_prefix;
-string GLViewer::mesh_suffix = GLViewer::params.mesh_suffix;
-unsigned int GLViewer::mesh_first_idx = GLViewer::params.mesh_first_idx;
+string GLViewer::mesh_prefix;
+string GLViewer::mesh_suffix;
+unsigned int GLViewer::mesh_first_idx;
 
-unsigned int GLViewer::num_frames = GLViewer::params.num_frames;
+unsigned int GLViewer::num_frames;
 
-string GLViewer::image_prefix = GLViewer::params.image_prefix;
-string GLViewer::image_suffix = GLViewer::params.image_suffix;
-unsigned int GLViewer::image_first_idx = GLViewer::params.image_first_idx;
-
-string GLViewer::sh_coeff_filename = GLViewer::params.sh_coeff_filename;
-
-//=============================================================================
-/**** VARIABLES ****/
+string GLViewer::image_prefix;
+string GLViewer::image_suffix;
+unsigned int GLViewer::image_first_idx;
 
 /* MAIN VARIABLES */
 MyMesh GLViewer::mesh;
@@ -51,14 +45,12 @@ unsigned int GLViewer::frame_idx;
 
 OpenMesh::IO::Options GLViewer::mesh_read_opt;
 
-GLubyte* GLViewer::pixel_data = (GLubyte*)malloc(3 * image_width * image_height);
+GLubyte* GLViewer::pixel_data;
 
 int GLViewer::window_id = 0;
 
 int GLViewer::sh_order = -1;
-int GLViewer::n_sh_coeff = 0;
-float* GLViewer::sh_coeff;
-
+vector<float> GLViewer::sh_coeff;
 
 //=============================================================================
 void GLViewer::initGLUT(int *argc, char **argv)
@@ -112,35 +104,37 @@ void GLViewer::display(void)
 	if (frame_idx > 0)
 	{
 		saveRenderedImage();
-
-		if (frame_idx == num_frames)
-		{
-			glutDestroyWindow(window_id);
-		}
 	}
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	if (frame_idx == num_frames)
+	{
+		glutDestroyWindow(window_id);
+	}
+	else
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glFrustum(frustum_left, frustum_right, frustum_bottom, frustum_top,
-		frustum_near, frustum_far);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glFrustum(frustum_left, frustum_right, frustum_bottom, frustum_top,
+			frustum_near, frustum_far);
 
-	glMatrixMode(GL_MODELVIEW);
+		glMatrixMode(GL_MODELVIEW);
 
-	glLoadIdentity();
+		glLoadIdentity();
 
-	gluLookAt(eye[0], eye[1], eye[2],	/* eye */
-		eye[0], eye[1], 1.f,	/* center */
-		0.f, -1.f, 0.f);	/* up is in positive y direction */
+		gluLookAt(eye[0], eye[1], eye[2],	/* eye */
+			eye[0], eye[1], 1.f,	/* center */
+			0.f, -1.f, 0.f);	/* up is in positive y direction */
 
-	glPushMatrix();
-	drawModel();
-	glPopMatrix();
+		glPushMatrix();
+		drawModel();
+		glPopMatrix();
 
-	glutSwapBuffers();
+		glutSwapBuffers();
 
-	glutPostRedisplay();
+		glutPostRedisplay();
+	}
 }
 //=============================================================================
 void GLViewer::drawModel()
@@ -213,6 +207,7 @@ void GLViewer::saveRenderedImage()
 		pixel_data);
 
 	cv::Mat img = cv::Mat(image_height, image_width, CV_8UC3, (void*)pixel_data);
+	cv::flip(img, img, 0);
 
 	string idx = cvtIntToString(image_first_idx + frame_idx - 1, 4);
 
@@ -222,6 +217,8 @@ void GLViewer::saveRenderedImage()
 //=============================================================================
 void GLViewer::initialize(int *argc, char **argv)
 {
+	initParameters(argv[1]);
+
 	initGLUT(argc, argv);
 
 	mesh.request_vertex_colors();
@@ -232,14 +229,6 @@ void GLViewer::initialize(int *argc, char **argv)
 	mesh_read_opt += OpenMesh::IO::Options::VertexNormal;
 	//mesh_read_opt += OpenMesh::IO::Options::Binary;
 	//mesh_read_opt += OpenMesh::IO::Options::LSB;
-
-	//params.load(argv[1]);
-
-	if (!use_gl_light && use_sh_light)
-	{
-		readVector(sh_coeff_filename.c_str(), sh_coeff, n_sh_coeff);
-		sh_order = sqrt(n_sh_coeff) - 1;
-	}
 }
 //=============================================================================
 void GLViewer::run()
@@ -250,11 +239,6 @@ void GLViewer::run()
 void GLViewer::destroy()
 {
 	delete pixel_data;
-
-	if (!use_gl_light && use_sh_light)
-	{
-		delete[] sh_coeff;
-	}
 }
 //=============================================================================
 string GLViewer::cvtIntToString(int _n, int _no_digits)
@@ -277,38 +261,121 @@ int GLViewer::numDigits(int _number)
 //=============================================================================
 float GLViewer::getSHIrradiance(const float* _normal)
 {
-	float* sh_function = new float[n_sh_coeff];
+	vector<float> sh_function;
 
 	if (sh_order > -1)
 	{
-		sh_function[0] = 1;
-
+		sh_function.push_back(1.f);
 	}
 
+	float x, y, z;
 	if (sh_order > 0)
 	{
-		sh_function[1] = _normal[0];
-		sh_function[2] = _normal[1];
-		sh_function[3] = _normal[2];
+		x = _normal[0];
+		y =	_normal[1];
+		z =	_normal[2];
+
+		sh_function.push_back(x);
+		sh_function.push_back(y);
+		sh_function.push_back(z);
 	}
 
+	float x2, y2, z2;
+	float xy, xz, yz;
 	if (sh_order > 1)
 	{
-		sh_function[4] = _normal[0] * _normal[1];
-		sh_function[5] = _normal[0] * _normal[2];
-		sh_function[6] = _normal[1] * _normal[2];
-		sh_function[7] = _normal[0] * _normal[0] - _normal[1] * _normal[1];
-		sh_function[8] = 3.f * _normal[2] * _normal[2] - 1;
+		x2 = _normal[0] * _normal[0];
+		y2 = _normal[1] * _normal[1];
+		z2 = _normal[2] * _normal[2];
+
+		xy = _normal[0] * _normal[1];
+		xz = _normal[0] * _normal[2];
+		yz = _normal[1] * _normal[2];
+
+		sh_function.push_back(xy);
+		sh_function.push_back(xz);
+		sh_function.push_back(yz);
+		sh_function.push_back( x2 - y2 );
+		sh_function.push_back( 3.f * z2 - 1 );
+	}
+
+	if (sh_order > 2)
+	{
+		sh_function.push_back((3 * x2 - y2) * y);	// (3 * x^2 - y^2) * y 
+		sh_function.push_back(xy * z);				// x * y * z
+		sh_function.push_back((5 * z2 - 1) * y);	// (5 * z^2 - 1) * y
+		sh_function.push_back((5 * z2 - 3) * z);	// (5 * z^2 - 3) * z
+		sh_function.push_back((5 * z2 - 1) * x);	// (5 * z^2 - 1) * x
+		sh_function.push_back((x2 - y2) * z);		// (x^2 - y^2) * z
+		sh_function.push_back((x2 - 3 * y2) * x);	// (x^2 - 3 * y^2) * x
+	}
+
+	if (sh_order > 3)
+	{
+		sh_function.push_back((x2 - y2) * xy);							// (x^2 - y^2) * x * y
+		sh_function.push_back((3 * x2 - y2) * yz);						// (3 * x^2 - y^2) * yz
+		sh_function.push_back((7 * z2 - 1) * xy);						// (7 * z^2 - 1) * x * y
+		sh_function.push_back((7 * z2 - 3) * yz);						// (7 * z^2 - 3) * y * z
+		sh_function.push_back(3 - 30 * z2 + 35 * z2 * z2);				// 3 - 30 * z^2 + 35 * z^4
+		sh_function.push_back((7 * z2 - 3) * xz);						// (7 * z^2 - 3) * x * z
+		sh_function.push_back((7 * z2 - 1) * (x2 - y2));				// (7 * z^2 - 1) * (x^2 - y^2)
+		sh_function.push_back((x2 - 3 * y2) * xz);						// (x^2 - 3 * y^2) * x * z
+		sh_function.push_back((x2 - 3 * y2) * x2 - (3 * x2 - y2) * y2);	// (x^2 - 3 * y^2) * x^2 - (3 * x^2 - y^2) * y^2 
 	}
 
 	float intensity = 0.f;
-	for (int i = 0; i < n_sh_coeff; i++)
+	for (int i = 0; i < sh_coeff.size(); i++)
 	{
 		intensity += sh_coeff[i] * sh_function[i];
 	}
 
-	delete[] sh_function;
-
 	return intensity;
+}
+//=============================================================================
+void GLViewer::initParameters(const char* _filename)
+{
+	// Load parameters from yml file
+	params.load(_filename);
+
+	/* IMAGE SIZE */
+	image_width = params.image_width;
+	image_height = params.image_height;
+
+	/* PERSPECTIVE PROPERTIES */
+	frustum_left = params.frustum_left;
+	frustum_right = params.frustum_right;
+	frustum_bottom = params.frustum_bottom;
+	frustum_top = params.frustum_top;
+	frustum_near = params.frustum_near;
+	frustum_far = params.frustum_far;
+	eye = params.eye;
+
+	/* LIGHT PARAMETERS */
+	light_ambient = params.light_ambient;
+	light_position = params.light_position;
+	light_intensity = params.light_intensity;
+	background_colour = params.background_colour;
+
+	use_gl_light = params.use_gl_light;
+	use_sh_light = params.use_sh_light;
+
+	/* FILENAME */
+	mesh_prefix = params.mesh_prefix;
+	mesh_suffix = params.mesh_suffix;
+	mesh_first_idx = params.mesh_first_idx;
+
+	num_frames = params.num_frames;
+
+	image_prefix = params.image_prefix;
+	image_suffix = params.image_suffix;
+	image_first_idx = params.image_first_idx;
+
+	if (!use_gl_light && use_sh_light)
+	{
+		readFloatVector(params.sh_coeff_filename.c_str(), sh_coeff);
+		sh_order = sqrt(sh_coeff.size()) - 1;
+	}
+
+	pixel_data = (GLubyte*)malloc(3 * image_width * image_height);
 }
 //=============================================================================

@@ -87,3 +87,24 @@ int readVector(const char* _filename, float* _v, int &_size)
 	return 0;
 }
 //=============================================================================
+int readFloatVector(const char* _filename, std::vector<float> &_v)
+{
+	std::ifstream ifs(_filename);
+
+	if (ifs)
+	{
+		float value;
+		while (ifs >> value) {
+			_v.push_back(value);
+		}
+
+		ifs.close();
+	}
+	else
+	{
+		return -1;
+	}
+
+	return 0;
+}
+//=============================================================================
