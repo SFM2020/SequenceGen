@@ -1,6 +1,8 @@
 #pragma once
 
 #include "MyMesh.h"
+
+#include <Eigen\Dense>
 //=============================================================================
 int readMesh(MyMesh& _mesh, const char* _filename,
 	OpenMesh::IO::Options _ropt);
