@@ -239,9 +239,12 @@ void GLViewer::saveRenderedImage()
 
 	if (!params.camera_rotation_x.empty())
 	{
-		path += "_ax_" + to_string(params.camera_rotation_x[angle_idx] + 90)
-			+ "_ay_" + to_string(params.camera_rotation_y[angle_idx])
-			+ "_az_" + to_string(params.camera_rotation_z[angle_idx]);
+		//path += "_ax_" + to_string(params.camera_rotation_x[angle_idx] + 90)
+		//	+ "_ay_" + to_string(params.camera_rotation_y[angle_idx])
+		//	+ "_az_" + to_string(params.camera_rotation_z[angle_idx]);
+
+		path += "_" 
+			+ cvtIntToString((int)params.camera_rotation_x[angle_idx] + 90, 4);
 	}
 
 	path += image_suffix;
