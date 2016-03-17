@@ -17,6 +17,7 @@ GLfloat GLViewer::frustum_top;
 GLfloat GLViewer::frustum_near;
 GLfloat GLViewer::frustum_far;
 vector<float> GLViewer::eye;
+vector<float> GLViewer::eye_center;
 
 /* LIGHT PARAMETERS */
 vector<float> GLViewer::light_ambient;
@@ -41,7 +42,8 @@ unsigned int GLViewer::image_first_idx;
 /* MAIN VARIABLES */
 MyMesh GLViewer::mesh;
 
-unsigned int GLViewer::frame_idx;
+unsigned int GLViewer::frame_idx = 0;
+unsigned int GLViewer::angle_idx = 0;
 
 OpenMesh::IO::Options GLViewer::mesh_read_opt;
 
@@ -106,7 +108,10 @@ void GLViewer::display(void)
 		saveRenderedImage();
 	}
 
-	if (frame_idx == num_frames)
+	if (frame_idx == num_frames 
+		&& ( (!params.camera_rotation_x.empty()
+		&& angle_idx == params.camera_rotation_x.size() - 1) 
+		|| params.camera_rotation_x.empty()))
 	{
 		glutDestroyWindow(window_id);
 	}
@@ -123,8 +128,21 @@ void GLViewer::display(void)
 
 		glLoadIdentity();
 
+		//glPushMatrix();
+		if (!params.camera_rotation_x.empty())
+		{
+			rotateEye(eye, eye_center, params.camera_rotation_x[angle_idx],
+				params.camera_rotation_y[angle_idx],
+				params.camera_rotation_z[angle_idx]);
+
+			//glTranslatef(-eye_center[0], -eye_center[1], -eye_center[2]);
+			//glRotatef(0, 1, 0, 0);
+			//glTranslatef(eye_center[0], eye_center[1], eye_center[2]);
+
+		}
+
 		gluLookAt(eye[0], eye[1], eye[2],	/* eye */
-			eye[0], eye[1], 1.f,	/* center */
+			eye_center[0], eye_center[1], eye_center[2],	/* center */
 			0.f, -1.f, 0.f);	/* up is in positive y direction */
 
 		glPushMatrix();
@@ -139,7 +157,12 @@ void GLViewer::display(void)
 //=============================================================================
 void GLViewer::drawModel()
 {
-	if (frame_idx < num_frames)
+	if (!params.camera_rotation_x.empty() 
+		&& angle_idx != params.camera_rotation_x.size() - 1)
+	{
+		angle_idx++;
+	}
+	else
 	{
 		string idx = cvtIntToString(mesh_first_idx + frame_idx, 4);
 
@@ -150,6 +173,7 @@ void GLViewer::drawModel()
 		mesh.update_face_normals();
 		mesh.update_vertex_normals();
 
+		angle_idx = 0;
 		frame_idx++;
 	}
 
@@ -211,7 +235,20 @@ void GLViewer::saveRenderedImage()
 
 	string idx = cvtIntToString(image_first_idx + frame_idx - 1, 4);
 
-	string path = image_prefix + idx + image_suffix;
+	string path = image_prefix + idx;
+
+	if (!params.camera_rotation_x.empty())
+	{
+		//path += "_ax_" + to_string(params.camera_rotation_x[angle_idx] + 90)
+		//	+ "_ay_" + to_string(params.camera_rotation_y[angle_idx])
+		//	+ "_az_" + to_string(params.camera_rotation_z[angle_idx]);
+
+		path += "_" 
+			+ cvtIntToString((int)params.camera_rotation_x[angle_idx] + 90, 4);
+	}
+
+	path += image_suffix;
+
 	cv::imwrite(path.c_str(), img);
 }
 //=============================================================================
@@ -349,6 +386,7 @@ void GLViewer::initParameters(const char* _filename)
 	frustum_near = params.frustum_near;
 	frustum_far = params.frustum_far;
 	eye = params.eye;
+	eye_center = params.eye_center;
 
 	/* LIGHT PARAMETERS */
 	light_ambient = params.light_ambient;
@@ -373,9 +411,41 @@ void GLViewer::initParameters(const char* _filename)
 	if (!use_gl_light && use_sh_light)
 	{
 		readFloatVector(params.sh_coeff_filename.c_str(), sh_coeff);
-		sh_order = sqrt(sh_coeff.size()) - 1;
+		sh_order = (int)sqrt(sh_coeff.size()) - 1;
 	}
 
 	pixel_data = (GLubyte*)malloc(3 * image_width * image_height);
+}
+//=============================================================================
+void GLViewer::rotateEye(vector<float> &_eye, const vector<float> &_center, 
+	const float _angle_x, const float _angle_y, const float _angle_z)
+{
+	float angle_x = _angle_x * M_PI / 180.0f;
+	float angle_y = _angle_y * M_PI / 180.0f;
+	float angle_z = _angle_z * M_PI / 180.0f;
+
+	Eigen::Matrix3f rot_x;
+	rot_x << 1, 0, 0,
+		0, cos(angle_x), -sin(angle_x),
+		0, sin(angle_x), cos(angle_x);
+
+	Eigen::Matrix3f rot_y;
+	rot_y << cos(angle_y), 0, sin(_angle_y),
+		0, 1, 0,
+		-sin(angle_y), 0, cos(_angle_y);
+
+	Eigen::Matrix3f rot_z;
+	rot_z << cos(_angle_z), -sin(angle_z), 0,
+		sin(angle_z), cos(angle_z), 0,
+		0, 0, 1;
+
+	Eigen::Vector3f v;
+	v << -_center[0], -_center[1], -_center[2];
+
+	Eigen::Vector3f rot_v = rot_z * rot_y * rot_x * v;
+
+	_eye[0] = rot_v(0) + _center[0];
+	_eye[1] = rot_v(1) + _center[1];
+	_eye[2] = rot_v(2) + _center[2];
 }
 //=============================================================================

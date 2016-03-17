@@ -13,6 +13,7 @@
 #define FRUSTUM_NEAR		"frustum_near"
 #define FRUSTUM_FAR			"frustum_far"
 #define EYE					"eye"
+#define EYE_CENTER			"eye_center"
 
 // Light parameters
 #define USE_GL_LIGHT		"use_gl_light"
@@ -33,6 +34,11 @@
 #define IMAGE_PREFIX	"image_prefix"
 #define IMAGE_SUFFIX	"image_suffix"
 #define IMAGE_FIRST_IDX	"image_first_idx"
+
+#define CAMERA_ROTATION_X	"camera_rotation_x"
+#define CAMERA_ROTATION_Y	"camera_rotation_y"
+#define CAMERA_ROTATION_Z	"camera_rotation_z"
+
 
 #include <cmath>
 #include <string>
@@ -58,6 +64,7 @@ namespace parameters {
 			frustum_near = 1000.f;
 			frustum_far = 3000.f;
 			eye = { 0.f, 0.f, 0.f };//{ 27.5228f, 3.62954f, 0.f};
+			eye_center = { 0.f, 0.f, 1.f };
 
 			// Light parameters
 			use_gl_light = false;
@@ -80,6 +87,10 @@ namespace parameters {
 			image_suffix = ".png";
 			image_first_idx = 1;
 			sh_coeff_filename = "C:/Users/Qi/Desktop/generated/images/x_-1_z_1_a_0.1/_sh_coeff.txt";
+
+			camera_rotation_x = {};
+			camera_rotation_y = {};
+			camera_rotation_z = {};
 		}
 
 		// Image parameters
@@ -94,6 +105,7 @@ namespace parameters {
 		float frustum_near;
 		float frustum_far;
 		vector<float> eye;
+		vector<float> eye_center;
 
 		// Light parameters
 		bool use_gl_light;
@@ -113,6 +125,10 @@ namespace parameters {
 		int image_first_idx;
 		string sh_coeff_filename;
 
+		// Camera rotation angles
+		vector<float> camera_rotation_x;
+		vector<float> camera_rotation_y;
+		vector<float> camera_rotation_z;
 
 		// Load parameters from an ini file
 		inline void Parameters::load(const std::string &_filename)
@@ -165,6 +181,11 @@ namespace parameters {
 			if (!fs[EYE].empty())
 			{
 				fs[EYE] >> eye;
+			}
+
+			if (!fs[EYE_CENTER].empty())
+			{
+				fs[EYE_CENTER] >> eye_center;
 			}
 
 
@@ -241,6 +262,22 @@ namespace parameters {
 			if (!fs[IMAGE_FIRST_IDX].empty())
 			{
 				fs[IMAGE_FIRST_IDX] >> image_first_idx;
+			}
+
+			// Camera rotation
+			if (!fs[CAMERA_ROTATION_X].empty())
+			{
+				fs[CAMERA_ROTATION_X] >> camera_rotation_x;
+			}
+
+			if (!fs[CAMERA_ROTATION_Y].empty())
+			{
+				fs[CAMERA_ROTATION_Y] >> camera_rotation_y;
+			}
+
+			if (!fs[CAMERA_ROTATION_Z].empty())
+			{
+				fs[CAMERA_ROTATION_Z] >> camera_rotation_z;
 			}
 		}
 

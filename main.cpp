@@ -2,10 +2,9 @@
 //=============================================================================
 int main(int argc, char **argv)
 {
-	GLViewer glViewer;
-	glViewer.initialize(&argc, argv);
-	glViewer.run();
-	glViewer.destroy();
+	GLViewer::initialize(&argc, argv);
+	GLViewer::run();
+	GLViewer::destroy();
 
 	return 0;
 }

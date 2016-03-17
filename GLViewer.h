@@ -39,6 +39,7 @@ private:
 	static GLfloat frustum_near;
 	static GLfloat frustum_far;
 	static vector<float> eye;
+	static vector<float> eye_center;
 
 	/* LIGHT PARAMETERS */
 	static vector<float> light_ambient;
@@ -65,6 +66,7 @@ private:
 	/* MAIN VARIABLES */
 	static MyMesh mesh;
 	static unsigned int frame_idx;
+	static unsigned int angle_idx;
 
 	static OpenMesh::IO::Options mesh_read_opt;
 
@@ -96,6 +98,9 @@ private:
 	static int numDigits(int _number);
 
 	static float getSHIrradiance(const float* _normal);
+
+	static void rotateEye(vector<float> &_eye, const vector<float> &_center,
+		const float _angle_x, const float _angle_y, const float _angle_z);
 
 public:
 	static void initialize(int *argc, char **argv);
