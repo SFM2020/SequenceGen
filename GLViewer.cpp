@@ -54,6 +54,14 @@ int GLViewer::window_id = 0;
 int GLViewer::sh_order = -1;
 vector<float> GLViewer::sh_coeff;
 
+Matrix3f GLViewer::KK;
+Vector3f GLViewer::translation;
+MatrixXf GLViewer::vertices;
+MatrixXf GLViewer::centred_vertices;
+MatrixXf GLViewer::points2d;
+MatrixXf GLViewer::face_normals;
+vector<vector<int>> GLViewer::faces;
+
 //=============================================================================
 void GLViewer::initGLUT(int *argc, char **argv)
 {
@@ -106,12 +114,12 @@ void GLViewer::display(void)
 	if (frame_idx > 0)
 	{
 		saveRenderedImage();
+		createDepthMap(vertices, points2d);
+		angle_idx++;
 	}
 
 	if (frame_idx == num_frames 
-		&& ( (!params.camera_rotation_x.empty()
-		&& angle_idx == params.camera_rotation_x.size() - 1) 
-		|| params.camera_rotation_x.empty()))
+		&& (angle_idx == params.camera_rotation_x.size()) )
 	{
 		glutDestroyWindow(window_id);
 	}
@@ -128,18 +136,18 @@ void GLViewer::display(void)
 
 		glLoadIdentity();
 
-		//glPushMatrix();
-		if (!params.camera_rotation_x.empty())
-		{
-			rotateEye(eye, eye_center, params.camera_rotation_x[angle_idx],
-				params.camera_rotation_y[angle_idx],
-				params.camera_rotation_z[angle_idx]);
+		////glPushMatrix();
+		//if (!params.camera_rotation_x.empty())
+		//{
+		//	rotateEye(eye, eye_center, params.camera_rotation_x[angle_idx],
+		//		params.camera_rotation_y[angle_idx],
+		//		params.camera_rotation_z[angle_idx]);
 
-			//glTranslatef(-eye_center[0], -eye_center[1], -eye_center[2]);
-			//glRotatef(0, 1, 0, 0);
-			//glTranslatef(eye_center[0], eye_center[1], eye_center[2]);
+		//	//glTranslatef(-eye_center[0], -eye_center[1], -eye_center[2]);
+		//	//glRotatef(0, 1, 0, 0);
+		//	//glTranslatef(eye_center[0], eye_center[1], eye_center[2]);
 
-		}
+		//}
 
 		gluLookAt(eye[0], eye[1], eye[2],	/* eye */
 			eye_center[0], eye_center[1], eye_center[2],	/* center */
@@ -157,12 +165,7 @@ void GLViewer::display(void)
 //=============================================================================
 void GLViewer::drawModel()
 {
-	if (!params.camera_rotation_x.empty() 
-		&& angle_idx != params.camera_rotation_x.size() - 1)
-	{
-		angle_idx++;
-	}
-	else
+	if (angle_idx == 0 || angle_idx == params.camera_rotation_x.size())
 	{
 		string idx = cvtIntToString(mesh_first_idx + frame_idx, 4);
 
@@ -170,11 +173,20 @@ void GLViewer::drawModel()
 
 		readMesh(mesh, path.c_str(), mesh_read_opt);
 
-		mesh.update_face_normals();
-		mesh.update_vertex_normals();
+		mesh.update_normals();
+
+		copyMeshFaces(mesh, faces);
+		copyMeshFaceNormals(mesh, face_normals);
+		copyMeshVertices(mesh, centred_vertices);
+		centred_vertices -= translation.replicate(1, centred_vertices.cols());
 
 		angle_idx = 0;
 		frame_idx++;
+	}
+
+	if (!params.camera_rotation_x.empty())
+	{
+		rotateMesh(params.camera_rotation_x[angle_idx], mesh);
 	}
 
 	glBegin(GL_TRIANGLES);
@@ -244,7 +256,7 @@ void GLViewer::saveRenderedImage()
 		//	+ "_az_" + to_string(params.camera_rotation_z[angle_idx]);
 
 		path += "_" 
-			+ cvtIntToString((int)params.camera_rotation_x[angle_idx] + 90, 4);
+			+ cvtIntToString((int)params.camera_rotation_x[angle_idx], 4);
 	}
 
 	path += image_suffix;
@@ -266,6 +278,10 @@ void GLViewer::initialize(int *argc, char **argv)
 	mesh_read_opt += OpenMesh::IO::Options::VertexNormal;
 	//mesh_read_opt += OpenMesh::IO::Options::Binary;
 	//mesh_read_opt += OpenMesh::IO::Options::LSB;
+
+	initIntrinsicMatrix();
+
+	translation = Vector3f(eye_center[0], eye_center[1], eye_center[2]);
 }
 //=============================================================================
 void GLViewer::run()
@@ -420,9 +436,9 @@ void GLViewer::initParameters(const char* _filename)
 void GLViewer::rotateEye(vector<float> &_eye, const vector<float> &_center, 
 	const float _angle_x, const float _angle_y, const float _angle_z)
 {
-	float angle_x = _angle_x * M_PI / 180.0f;
-	float angle_y = _angle_y * M_PI / 180.0f;
-	float angle_z = _angle_z * M_PI / 180.0f;
+	float angle_x = _angle_x * float(M_PI) / 180.0f;
+	float angle_y = _angle_y * float(M_PI) / 180.0f;
+	float angle_z = _angle_z * float(M_PI) / 180.0f;
 
 	Eigen::Matrix3f rot_x;
 	rot_x << 1, 0, 0,
@@ -447,5 +463,466 @@ void GLViewer::rotateEye(vector<float> &_eye, const vector<float> &_center,
 	_eye[0] = rot_v(0) + _center[0];
 	_eye[1] = rot_v(1) + _center[1];
 	_eye[2] = rot_v(2) + _center[2];
+}
+//=============================================================================
+void GLViewer::initIntrinsicMatrix()
+{
+	KK = Matrix3f::Identity();
+	KK(0, 0) = params.frustum_near * 10;
+	KK(1, 1) = params.frustum_near * 10;
+	KK(0, 2) = params.frustum_right * 10;
+	KK(1, 2) = params.frustum_top * 10;
+}
+//=============================================================================
+void GLViewer::copyMeshVertices(const MyMesh &_mesh, MatrixXf &_vertices)
+{
+	_vertices.resize(3, _mesh.n_vertices());
+
+	MyMesh::ConstVertexIter v_it;
+	MyMesh::ConstVertexIter v_end = _mesh.vertices_end();
+	for (v_it = _mesh.vertices_begin(); v_it != v_end; ++v_it)
+	{
+		int v_idx = v_it->idx();
+		MyMesh::Point p = _mesh.point(*v_it);
+		_vertices(0, v_idx) = p[0];
+		_vertices(1, v_idx) = p[1];
+		_vertices(2, v_idx) = p[2];
+	}
+}
+//=============================================================================
+void GLViewer::copyMeshFaces(const MyMesh &_mesh, vector<vector<int>> &_faces)
+{
+	vector<int> zeros(3, 0);
+	_faces.resize(_mesh.n_faces(), zeros);
+
+	MyMesh::ConstFaceIter f_it;
+	MyMesh::ConstFaceIter f_end = _mesh.faces_end();
+	for (f_it = mesh.faces_begin(); f_it != f_end; ++f_it)
+	{
+		int faceInd = f_it->idx();
+
+		MyMesh::ConstFaceVertexIter fv_it;
+		MyMesh::ConstFaceVertexIter fv_end = mesh.fv_end(*f_it);
+		int i = 0;
+		for (fv_it = mesh.fv_begin(*f_it); fv_it != fv_end; ++fv_it)
+		{
+			_faces[faceInd][i] = fv_it->idx();
+			i++;
+		}
+	}
+}
+//=============================================================================
+void GLViewer::copyMeshFaceNormals(MyMesh &_mesh, MatrixXf &_face_normals)
+{
+	_face_normals.resize(3, _mesh.n_faces());
+
+	MyMesh::ConstFaceIter f_it;
+	MyMesh::ConstFaceIter f_end = _mesh.faces_end();
+	for (f_it = mesh.faces_begin(); f_it != f_end; ++f_it)
+	{
+		int faceInd = f_it->idx();
+
+		MyMesh::Normal n = _mesh.normal(*f_it);
+
+		_face_normals(0, faceInd) = n[0];
+		_face_normals(1, faceInd) = n[1];
+		_face_normals(2, faceInd) = n[2];
+	}
+}
+//=============================================================================
+void GLViewer::computeImageProjection(const MatrixXf &_vertices, 
+	const Matrix3f &_KK, MatrixXf &_image_projection)
+{
+	_image_projection.resize(2, _vertices.cols());
+
+	MatrixXf homogeneus = _KK * _vertices;
+	
+	_image_projection.row(0) = homogeneus.row(0).cwiseProduct(
+		homogeneus.row(2).cwiseInverse()
+		);
+	_image_projection.row(1) = homogeneus.row(1).cwiseProduct(
+		homogeneus.row(2).cwiseInverse()
+		);
+}
+//=============================================================================
+void GLViewer::updateVisibility(vector<bool> &visibility)
+{
+	int width = params.image_width;
+	int height = params.image_height;
+
+	int n_vertices = (int)vertices.cols();
+
+	static vector< vector<unsigned int> > visibilityFacesTest;
+
+	// visibility mask, used for speed up old rendering code
+	// this will set up in the first call
+	// will not do anything during the second time
+	visibilityFacesTest.resize(width*height);
+	for (int i = 0; i < width*height; ++i)
+		visibilityFacesTest[i].reserve(5);   // 5 reserved faces for each pixel.
+
+	// image width and height
+	int m_nWidth, m_nHeight;
+	m_nWidth = width; m_nHeight = height;
+
+	// reset the visibility mask to true first.
+	visibility.resize(n_vertices, true);
+
+	// update the visibility mask using previous mesh
+	// assign faces to visibilityFacesTest according to 2d projections
+	float x1, x2, x3, y1, y2, y3;
+	float xmin, xmax, ymin, ymax;
+	int xminI, xmaxI, yminI, ymaxI;
+	int xx, yy;
+	int vertex1, vertex2, vertex3;
+	MatrixXf faceCenters(3, mesh.n_faces());
+
+	for (int faceInd = 0; faceInd < faces.size(); ++faceInd)
+	{
+		vertex1 = faces[faceInd][0];
+		vertex2 = faces[faceInd][1];
+		vertex3 = faces[faceInd][2];
+
+		x1 = points2d(0, vertex1);
+		x2 = points2d(0, vertex2);
+		x3 = points2d(0, vertex3);
+		y1 = points2d(1, vertex1);
+		y2 = points2d(1, vertex2);
+		y3 = points2d(1, vertex3);
+		xmin = min(min(x1, x2), x3);
+		xmax = max(max(x1, x2), x3);
+		ymin = min(min(y1, y2), y3);
+		ymax = max(max(y1, y2), y3);
+		// if the projection of the face is outside the image, we give up
+		if (xmin > m_nWidth + 1 || ymin > m_nHeight + 1 ||
+			xmax < 0 || ymax < 0)
+			continue;
+
+		xminI = max(1, int(floor(xmin)));
+		yminI = max(1, int(floor(ymin)));
+		xmaxI = min(int(ceil(xmax)), m_nWidth);
+		ymaxI = min(int(ceil(ymax)), m_nHeight);
+		for (xx = xminI - 1; xx < xmaxI; ++xx)
+		{
+			for (yy = yminI - 1; yy < ymaxI; ++yy)
+			{
+				visibilityFacesTest[yy*m_nWidth + xx].push_back(faceInd);
+			}
+		}
+
+		Vector3f v1 = vertices.col(vertex1);
+		Vector3f v2 = vertices.col(vertex2);
+		Vector3f v3 = vertices.col(vertex3);
+
+		// prepare the face center and face normals for the purpose of gettin
+		// intersection between faces and back-projected ray.
+		faceCenters.col(faceInd) = (v1 + v2 + v3) / 3;
+
+		//compnorm(&meshVertices[vertex1][0], &meshVertices[vertex2][0],
+		//	&meshVertices[vertex3][0], &faceNormals[3 * faceInd], 1);
+
+	}
+
+	// // check if the projection of all faces looks reasonable
+	// // PixelType* pMaskBuffer = new PixelType[m_nHeight*m_nWidth];
+	// // IntensityImageType maskImage(m_nHeight,m_nWidth,pMaskBuffer);
+	// IntensityImageType maskImage(m_nHeight,m_nWidth);
+	// for(int i = 0; i < m_nHeight; ++i)
+	// {
+	//     for(int j = 0; j < m_nWidth; ++j)
+	//     {
+	//         if(visibilityFacesTest[i*m_nWidth+j].size() > 0)
+	//         maskImage(i,j) = 255;
+	//         else
+	//         maskImage(i,j) = 0;
+	//     }
+	// }
+	// // cv::imshow("maskImage",maskImage);
+	// // cv::waitKey(0);
+	// cv::imwrite("visMaskImage.png",maskImage);
+	// // delete[] pMaskBuffer;
+
+	// loop over vertices to find the intersection between backprojected race
+	// and the possible faces of the mesh
+	float projX, projY;
+	int projXminI, projYminI;
+	int projXmaxI, projYmaxI;
+	int position, faceInd;
+
+	for (int vertexInd = 0; vertexInd < n_vertices;
+		++vertexInd)
+	{
+		// if the projection is outside the image, it is not visible
+
+		if (points2d(0, vertexInd) < 0 || points2d(0, vertexInd) > m_nWidth ||
+			points2d(1, vertexInd) < 0 || points2d(1, vertexInd) > m_nHeight)
+		{
+			visibility[vertexInd] = false;
+			continue;
+		}
+
+		projX = points2d(0, vertexInd);
+		projY = points2d(1, vertexInd);
+
+		projXminI = max(1, int(floor(projX)));
+		projYminI = max(1, int(floor(projY)));
+
+		projXmaxI = min(int(ceil(projX)), m_nWidth);
+		projYmaxI = min(int(ceil(projY)), m_nHeight);
+
+		bool done = false;
+
+		for (xx = projXminI - 1; xx < projXmaxI; ++xx)
+		{
+			for (yy = projYminI - 1; yy < projYmaxI; ++yy)
+			{
+				// loop over all the faces here
+				position = yy*m_nWidth + xx;
+				int facesNum = (int)visibilityFacesTest[position].size();
+				for (int k = 0; k < facesNum; ++k)
+				{
+					faceInd = visibilityFacesTest[position][k];
+
+					vertex1 = faces[faceInd][0];
+					vertex2 = faces[faceInd][1];
+					vertex3 = faces[faceInd][2];
+					// check if the vertex belongs to this face
+					if (vertex1 == vertexInd ||
+						vertex2 == vertexInd ||
+						vertex3 == vertexInd)
+						continue;
+					// First test if the projection of the point is inside the triangle,
+					// If not, we continue to the next face
+					if (pointInTriangleTest2(points2d.col(vertexInd),
+						points2d.col(vertex1),
+						points2d.col(vertex2),
+						points2d.col(vertex3)))
+					{
+						Vector3f v0 = vertices.col(vertexInd);
+						Vector3f v1 = vertices.col(vertex1);
+						Vector3f v2 = vertices.col(vertex2);
+						Vector3f v3 = vertices.col(vertex3);
+						Vector3f fn = face_normals.col(faceInd);
+
+						// compute the intersection between the
+						// backtraced ray of vertexInd and the face faceInd
+						// point, center, normal, point1, point2, point3
+						visibility[vertexInd] = visibilityTest(v0,
+							faceCenters.col(faceInd),
+							fn,
+							v1,
+							v2,
+							v3);
+					}
+					else
+						continue;
+
+					// check if the vertex is already occluded or not
+					if (visibility[vertexInd] == false)
+					{
+						done = true;
+						break;
+					}
+				}
+
+				if (done)
+					break;
+
+			}
+
+			if (done)
+				break;
+
+		}
+
+		//cout << "Vertex " << vertexInd << ": " << visibility[vertexInd] << endl;
+
+	}
+
+	for (int i = 0; i < visibilityFacesTest.size(); ++i)
+		visibilityFacesTest[i].clear();   // 5 reserved faces for each pixel, capacity doesn't change
+
+	// print out how many points are visible and how many points are occluded
+	int visible_num = 0;
+	int occluded_num = 0;
+	for (int i = 0; i < visibility.size(); ++i)
+		if (visibility[i])
+			visible_num++;
+		else
+			occluded_num++;
+
+	cout << "visible num: " << visible_num << endl;
+	cout << "occluded num: " << occluded_num << endl;
+
+}
+//=============================================================================
+bool GLViewer::pointInTriangleTest2(const Vector2f &pointP,
+	const Vector2f &pointA, const Vector2f &pointB, const Vector2f &pointC)
+{
+	float A, B, D, E, C, F;
+	A = pointA(0) - pointC(0);
+	B = pointB(0) - pointC(0);
+	D = pointA(1) - pointC(1);
+	E = pointB(1) - pointC(1);
+
+	C = pointC(0) - pointP(0);
+	F = pointC(1) - pointP(1);
+
+	float alpha, beta, gamma;
+	alpha = (B*(F)-C*(E)) / (A*(E)-B*(D));
+	beta = (A*(F)-C*(D)) / (B*(D)-A*(E));
+	gamma = 1 - alpha - beta;
+
+	return (alpha >= 0 && beta >= 0 && gamma >= 0);
+
+}
+//=============================================================================
+bool GLViewer::visibilityTest(const Vector3f &vertex, const Vector3f &center,
+	const Vector3f & normal, const Vector3f & vertex1,
+	const Vector3f & vertex2, const Vector3f & vertex3)
+{
+	// tell if a point is in front of a triangle face
+	float faceDist, pointDist, scale;
+	faceDist = center.dot(normal);
+	pointDist = vertex.dot(normal);
+	scale = faceDist / pointDist;
+
+	Vector3f intersection = scale * vertex;
+
+	// if the intersection is in front,
+	// then the test vertex is occluded by
+	// the front face, we give up
+	if (intersection(2) < vertex(2))
+		return false;
+	else
+		return true;
+
+}
+//=============================================================================
+void GLViewer::rotateMesh(const float &_angle, MyMesh &_mesh)
+{
+	float angle = _angle * float(M_PI) / 180.0f;
+
+	Matrix3f rot_matrix;
+	rot_matrix << 1, 0, 0,
+		0, cos(angle), -sin(angle),
+		0, sin(angle), cos(angle);
+
+	vertices = rot_matrix * centred_vertices;
+	vertices += translation.replicate(1, vertices.cols());
+
+	MyMesh::ConstVertexIter v_it;
+	MyMesh::ConstVertexIter v_end = _mesh.vertices_end();
+	for (v_it = _mesh.vertices_begin(); v_it != v_end; ++v_it)
+	{
+		int v_idx = v_it->idx();
+		MyMesh::Point p(
+			vertices(0, v_idx), vertices(1, v_idx), vertices(2, v_idx));
+		_mesh.set_point(*v_it, p);
+	}
+
+	_mesh.update_normals();
+
+	copyMeshVertices(mesh, vertices);
+	copyMeshFaceNormals(mesh, face_normals);
+	computeImageProjection(vertices, KK, points2d);
+}
+//=============================================================================
+void GLViewer::createDepthMap(const MatrixXf &_vertices, const MatrixXf &_points2d)
+{
+	int img_height = params.image_height;
+	int img_width = params.image_width;
+
+	vector<bool> visibility;
+	updateVisibility(visibility);
+
+	// For each pixels stores pairs of weights and depth of vertices
+	// The weight is based ob its distance to the pixel
+	static vector<vector<pair<float, float>>> depth_pixel;
+	depth_pixel.resize(img_width * img_height);
+
+	for (int i = 0; i < _vertices.cols(); i++)
+	{
+		if (visibility[i])
+		{
+			float x = _points2d(0, i);
+			float y = _points2d(1, i);
+			int x_min = (int)floor(x);
+			int x_max = (int)ceil(x);
+			int y_min = (int)floor(y);
+			int y_max = (int)ceil(y);
+
+			float depth = _vertices(2, i);
+			// The reprojection of a vertex can lie between four different pixels
+			float distance;
+			int pixel_idx;
+			distance = sqrt(pow(x - float(x_min), 2) + pow(y - float(y_min), 2));
+			pixel_idx = x_min * img_height + y_min;
+			depth_pixel[pixel_idx].push_back(pair<float, float>(1 - distance, depth));
+
+			if (x_min != x_max)
+			{
+				distance = sqrt(pow(x - float(x_max), 2) + pow(y - float(y_min), 2));
+				pixel_idx = x_max * img_height + y_min;
+				depth_pixel[pixel_idx].push_back(pair<float, float>(1 - distance, depth));
+			}
+
+			if (y_min != y_max)
+			{
+				distance = sqrt(pow(x - float(x_min), 2) + pow(y - float(y_max), 2));
+				pixel_idx = x_min * img_height + y_max;
+				depth_pixel[pixel_idx].push_back(pair<float, float>(1 - distance, depth));
+			}
+
+			if (x_min != x_max && y_min != y_max)
+			{
+				distance = sqrt(pow(x - float(x_max), 2) + pow(y - float(y_max), 2));
+				pixel_idx = x_max * img_height + y_max;
+				depth_pixel[pixel_idx].push_back(pair<float, float>(1 - distance, depth));
+			}
+		}
+	}
+
+
+	cv::Mat depth_img = cv::Mat(img_height, img_width, CV_32FC1);
+	for (int i = 0; i < img_height * img_width; i++)
+	{
+		int y = i % img_height;
+		int x = i / img_height;
+
+		float depth = 0.0f;
+		if (!depth_pixel[i].empty())
+		{
+			float sum_weights = 0;
+			for (int j = 0; j < depth_pixel[i].size(); j++)
+			{
+				depth += depth_pixel[i][j].first * depth_pixel[i][j].second;
+				sum_weights += depth_pixel[i][j].first;
+			}
+			depth /= sum_weights;
+		}
+
+		depth_img.at<float>(cv::Point(x, y)) = depth;
+
+		depth_pixel[i].clear();
+	}
+
+	string idx = cvtIntToString(image_first_idx + frame_idx - 1, 4);
+
+	string path = image_prefix + idx;
+
+	if (!params.camera_rotation_x.empty())
+	{
+		//path += "_ax_" + to_string(params.camera_rotation_x[angle_idx] + 90)
+		//	+ "_ay_" + to_string(params.camera_rotation_y[angle_idx])
+		//	+ "_az_" + to_string(params.camera_rotation_z[angle_idx]);
+
+		path += "_"
+			+ cvtIntToString((int)params.camera_rotation_x[angle_idx], 4);
+	}
+
+	path += ".exr";
+
+	cv::imwrite(path.c_str(), depth_img);
 }
 //=============================================================================

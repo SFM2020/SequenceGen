@@ -11,6 +11,7 @@
 #include <opencv2\highgui\highgui.hpp>
 //=============================================================================
 using namespace std;
+using namespace Eigen;
 //=============================================================================
 class GLViewer
 {
@@ -77,6 +78,15 @@ private:
 	static int sh_order;
 	static vector<float> sh_coeff;
 
+	// Intrinsic matrix
+	static Matrix3f KK;
+	static Vector3f translation;
+	static MatrixXf centred_vertices;
+	static MatrixXf vertices;
+	static MatrixXf points2d;
+	static MatrixXf face_normals;
+	static vector<vector<int>> faces;
+
 	//=========================================================================
 
 	/**** PRIVATE FUNCTIONS ****/
@@ -101,6 +111,25 @@ private:
 
 	static void rotateEye(vector<float> &_eye, const vector<float> &_center,
 		const float _angle_x, const float _angle_y, const float _angle_z);
+
+	static void initIntrinsicMatrix();
+	static void copyMeshVertices(const MyMesh &_mesh, MatrixXf &_vertices);
+	static void copyMeshFaces(const MyMesh &_mesh, 
+		vector<vector<int>> &_faces);
+	static void copyMeshFaceNormals(MyMesh &_mesh, MatrixXf &_face_normals);
+	static void computeImageProjection(const MatrixXf &_vertices, const Matrix3f &_KK,
+		MatrixXf &_image_projection);
+
+	static void rotateMesh(const float &_angle, MyMesh &_mesh);
+
+	static void updateVisibility(vector<bool> &visibility);
+	static bool pointInTriangleTest2(const Vector2f &pointP,
+		const Vector2f &pointA, const Vector2f &pointB, const Vector2f &pointC);
+	static bool visibilityTest(const Vector3f &vertex, const Vector3f &center,
+		const Vector3f & normal, const Vector3f & vertex1,
+		const Vector3f & vertex2, const Vector3f & vertex3);
+
+	static void createDepthMap(const MatrixXf &_vertices, const MatrixXf &_points2d);
 
 public:
 	static void initialize(int *argc, char **argv);
