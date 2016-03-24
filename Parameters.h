@@ -35,6 +35,10 @@
 #define IMAGE_SUFFIX	"image_suffix"
 #define IMAGE_FIRST_IDX	"image_first_idx"
 
+#define DEPTH_PREFIX	"depth_prefix"
+#define DEPTH_SUFFIX	"depth_suffix"
+#define DEPTH_FIRST_IDX	"depth_first_idx"
+
 #define CAMERA_ROTATION_X	"camera_rotation_x"
 #define CAMERA_ROTATION_Y	"camera_rotation_y"
 #define CAMERA_ROTATION_Z	"camera_rotation_z"
@@ -88,6 +92,10 @@ namespace parameters {
 			image_first_idx = 1;
 			sh_coeff_filename = "C:/Users/Qi/Desktop/generated/images/x_-1_z_1_a_0.1/_sh_coeff.txt";
 
+			depth_prefix = "C:/Users/Qi/Desktop/generated/images/result_";
+			depth_suffix = ".png";
+			depth_first_idx = 1;
+
 			camera_rotation_x = {};
 			camera_rotation_y = {};
 			camera_rotation_z = {};
@@ -124,6 +132,10 @@ namespace parameters {
 		string image_suffix;
 		int image_first_idx;
 		string sh_coeff_filename;
+
+		string depth_prefix;
+		string depth_suffix;
+		int depth_first_idx;
 
 		// Camera rotation angles
 		vector<float> camera_rotation_x;
@@ -262,6 +274,21 @@ namespace parameters {
 			if (!fs[IMAGE_FIRST_IDX].empty())
 			{
 				fs[IMAGE_FIRST_IDX] >> image_first_idx;
+			}
+
+			if (!fs[DEPTH_PREFIX].empty())
+			{
+				fs[DEPTH_PREFIX] >> depth_prefix;
+			}
+
+			if (!fs[DEPTH_SUFFIX].empty())
+			{
+				fs[DEPTH_SUFFIX] >> depth_suffix;
+			}
+
+			if (!fs[DEPTH_FIRST_IDX].empty())
+			{
+				fs[DEPTH_FIRST_IDX] >> depth_first_idx;
 			}
 
 			// Camera rotation

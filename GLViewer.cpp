@@ -245,19 +245,9 @@ void GLViewer::saveRenderedImage()
 	cv::Mat img = cv::Mat(image_height, image_width, CV_8UC3, (void*)pixel_data);
 	cv::flip(img, img, 0);
 
-	string idx = cvtIntToString(image_first_idx + frame_idx - 1, 4);
+	string idx = cvtIntToString(image_first_idx + angle_idx, 4);
 
 	string path = image_prefix + idx;
-
-	if (!params.camera_rotation_x.empty())
-	{
-		//path += "_ax_" + to_string(params.camera_rotation_x[angle_idx] + 90)
-		//	+ "_ay_" + to_string(params.camera_rotation_y[angle_idx])
-		//	+ "_az_" + to_string(params.camera_rotation_z[angle_idx]);
-
-		path += "_" 
-			+ cvtIntToString((int)params.camera_rotation_x[angle_idx], 4);
-	}
 
 	path += image_suffix;
 
@@ -841,6 +831,7 @@ void GLViewer::createDepthMap(const MatrixXf &_vertices, const MatrixXf &_points
 	static vector<vector<pair<float, float>>> depth_pixel;
 	depth_pixel.resize(img_width * img_height);
 
+	float sqrt_2 = sqrt(2.0f);
 	for (int i = 0; i < _vertices.cols(); i++)
 	{
 		if (visibility[i])
@@ -852,33 +843,33 @@ void GLViewer::createDepthMap(const MatrixXf &_vertices, const MatrixXf &_points
 			int y_min = (int)floor(y);
 			int y_max = (int)ceil(y);
 
-			float depth = _vertices(2, i);
+			float depth = _vertices(2, i) * 1e-3f;
 			// The reprojection of a vertex can lie between four different pixels
 			float distance;
 			int pixel_idx;
 			distance = sqrt(pow(x - float(x_min), 2) + pow(y - float(y_min), 2));
 			pixel_idx = x_min * img_height + y_min;
-			depth_pixel[pixel_idx].push_back(pair<float, float>(1 - distance, depth));
+			depth_pixel[pixel_idx].push_back(pair<float, float>(sqrt_2 - distance, depth));
 
 			if (x_min != x_max)
 			{
 				distance = sqrt(pow(x - float(x_max), 2) + pow(y - float(y_min), 2));
 				pixel_idx = x_max * img_height + y_min;
-				depth_pixel[pixel_idx].push_back(pair<float, float>(1 - distance, depth));
+				depth_pixel[pixel_idx].push_back(pair<float, float>(sqrt_2 - distance, depth));
 			}
 
 			if (y_min != y_max)
 			{
 				distance = sqrt(pow(x - float(x_min), 2) + pow(y - float(y_max), 2));
 				pixel_idx = x_min * img_height + y_max;
-				depth_pixel[pixel_idx].push_back(pair<float, float>(1 - distance, depth));
+				depth_pixel[pixel_idx].push_back(pair<float, float>(sqrt_2 - distance, depth));
 			}
 
 			if (x_min != x_max && y_min != y_max)
 			{
 				distance = sqrt(pow(x - float(x_max), 2) + pow(y - float(y_max), 2));
 				pixel_idx = x_max * img_height + y_max;
-				depth_pixel[pixel_idx].push_back(pair<float, float>(1 - distance, depth));
+				depth_pixel[pixel_idx].push_back(pair<float, float>(sqrt_2 - distance, depth));
 			}
 		}
 	}
@@ -907,21 +898,9 @@ void GLViewer::createDepthMap(const MatrixXf &_vertices, const MatrixXf &_points
 		depth_pixel[i].clear();
 	}
 
-	string idx = cvtIntToString(image_first_idx + frame_idx - 1, 4);
+	string idx = cvtIntToString(image_first_idx + angle_idx, 4);
 
-	string path = image_prefix + idx;
-
-	if (!params.camera_rotation_x.empty())
-	{
-		//path += "_ax_" + to_string(params.camera_rotation_x[angle_idx] + 90)
-		//	+ "_ay_" + to_string(params.camera_rotation_y[angle_idx])
-		//	+ "_az_" + to_string(params.camera_rotation_z[angle_idx]);
-
-		path += "_"
-			+ cvtIntToString((int)params.camera_rotation_x[angle_idx], 4);
-	}
-
-	path += ".exr";
+	string path = params.depth_prefix + idx + params.depth_suffix;
 
 	cv::imwrite(path.c_str(), depth_img);
 }
