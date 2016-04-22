@@ -33,7 +33,9 @@ string GLViewer::image_suffix;
 unsigned int GLViewer::image_first_idx;
 
 /* MAIN VARIABLES */
+MyMesh GLViewer::template_mesh;
 MyMesh GLViewer::mesh;
+MyMesh GLViewer::mesh2;
 
 unsigned int GLViewer::frame_idx;
 
@@ -138,64 +140,94 @@ void GLViewer::drawModel()
 {
 	if (frame_idx < num_frames)
 	{
-		string idx = cvtIntToString(mesh_first_idx + frame_idx, 4);
+		string idx = cvtIntToString(mesh_first_idx + frame_idx, 3);
 
 		string path = mesh_prefix + idx + mesh_suffix;
 
 		readMesh(mesh, path.c_str(), mesh_read_opt);
 
-		mesh.update_face_normals();
-		mesh.update_vertex_normals();
+		string path2 = params.mesh_prefix2 + idx + params.mesh_suffix2;
+
+		readMesh(mesh2, path2.c_str(), mesh_read_opt);
+
+		//for (MyMesh::VertexIter v_it = template_mesh.vertices_begin(); 
+		//	v_it != template_mesh.vertices_end(); ++v_it)
+		//{
+		//	int v_idx = v_it->idx();
+
+		//	MyMesh::VertexHandle vh = mesh2.vertex_handle(v_idx);
+
+		//	template_mesh.set_point(*v_it, mesh2.point(vh));
+
+		//}
+
+		//template_mesh.update_normals();
 
 		frame_idx++;
 	}
 
-	glBegin(GL_TRIANGLES);
-
-	for (MyMesh::FaceIter f_it = mesh.faces_begin();
-		f_it != mesh.faces_end(); ++f_it)
+	drawModel(mesh, params.point_cloud, params.color, params.radius);
+	drawModel(mesh2, params.point_cloud2, params.color2, params.radius2);
+}
+//=============================================================================
+void GLViewer::drawModel(MyMesh &mesh, bool point_cloud, 
+	const vector<float> &color, float radius)
+{
+	if (point_cloud)
 	{
-		MyMesh::FaceVertexIter fv_it;
-		for (fv_it = mesh.fv_iter(*f_it); fv_it.is_valid(); ++fv_it)
+		for (MyMesh::ConstVertexIter v_it = mesh.vertices_begin();
+			v_it != mesh.vertices_end(); ++v_it)
 		{
-			//int v_idx = fv_it.handle().idx();
+			MyMesh::Point p = mesh.point(*v_it);
 
-			MyMesh::Point p = mesh.point(*fv_it);
-			float point[3] {p[0], p[1], p[2]};
-
-			MyMesh::Normal n = mesh.normal(*fv_it);
-			float normal[3] {n[0], n[1], n[2]};
-
-			MyMesh::Color c = mesh.color(*fv_it);
-
-			float red = c[0];
-			float green = c[1];
-			float blue = c[2];
-
-			//float red = ((float)c[0]) / 255.f;
-			//float green = ((float)c[1]) / 255.f;	
-			//float blue = ((float)c[2]) / 255.f;
-
-			//float red = 0.796078f;
-			//float green = 0.521569f;
-			//float blue = 0.435294f;			  
-
-			if (!use_gl_light && use_sh_light)
-			{
-				float irradiance = getSHIrradiance(normal);
-
-				red *= irradiance;
-				green *= irradiance;
-				blue *= irradiance;
-			}
-
-			glColor3f(red, green, blue);
-
-			glNormal3fv(normal);
-			glVertex3fv(point);
+			glPushMatrix();
+			glTranslatef(p[0], p[1], p[2]);
+			glutSolidSphere(radius, 10, 10);
+			glColor3f(color[0], color[1], color[2]);
+			glPopMatrix();
 		}
 	}
-	glEnd();
+	else
+	{
+		glBegin(GL_TRIANGLES);
+
+		for (MyMesh::FaceIter f_it = mesh.faces_begin();
+			f_it != mesh.faces_end(); ++f_it)
+		{
+			MyMesh::FaceVertexIter fv_it;
+			for (fv_it = mesh.fv_iter(*f_it); fv_it.is_valid(); ++fv_it)
+			{
+				//int v_idx = fv_it.handle().idx();
+
+				MyMesh::Point p = mesh.point(*fv_it);
+				float point[3] {p[0], p[1], p[2]};
+
+				MyMesh::Normal n = mesh.normal(*fv_it);
+				float normal[3] {n[0], n[1], n[2]};
+
+				MyMesh::Color c = mesh.color(*fv_it);
+
+				float red = c[0];
+				float green = c[1];
+				float blue = c[2];	  
+
+				if (!use_gl_light && use_sh_light)
+				{
+					float irradiance = getSHIrradiance(normal);
+
+					red *= irradiance;
+					green *= irradiance;
+					blue *= irradiance;
+				}
+
+				glColor3f(red, green, blue);
+
+				glNormal3fv(normal);
+				glVertex3fv(point);
+			}
+		}
+		glEnd();
+	}
 }
 //=============================================================================
 void GLViewer::saveRenderedImage()
@@ -218,12 +250,28 @@ void GLViewer::initialize(int *argc, char **argv)
 
 	initGLUT(argc, argv);
 
+	mesh_read_opt += OpenMesh::IO::Options::VertexColor;
+	mesh_read_opt += OpenMesh::IO::Options::FaceColor;
+	mesh_read_opt += OpenMesh::IO::Options::VertexNormal;
+
+	template_mesh.request_vertex_colors();
+	template_mesh.request_face_colors();
+	template_mesh.request_face_normals();
+	template_mesh.request_vertex_normals();
+
+	readMesh(template_mesh, params.template_path.c_str(), mesh_read_opt);
+
 	mesh.request_vertex_colors();
+	mesh.request_face_colors();
 	mesh.request_face_normals();
 	mesh.request_vertex_normals();
 
-	mesh_read_opt += OpenMesh::IO::Options::VertexColor;
-	mesh_read_opt += OpenMesh::IO::Options::VertexNormal;
+	mesh2.request_vertex_colors();
+	mesh2.request_face_colors();
+	mesh2.request_face_normals();
+	mesh2.request_vertex_normals();
+
+
 	//mesh_read_opt += OpenMesh::IO::Options::Binary;
 	//mesh_read_opt += OpenMesh::IO::Options::LSB;
 }
@@ -247,6 +295,11 @@ string GLViewer::cvtIntToString(int _n, int _no_digits)
 //=============================================================================
 int GLViewer::numDigits(int _number)
 {
+	if (_number==0)
+	{
+		return 1;
+	}
+
 	int digits = 0;
 	while (_number) {
 		_number /= 10;

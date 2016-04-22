@@ -27,11 +27,22 @@
 #define SH_COEFF_FILENAME	"sh_coeff_filename"
 
 // I/O parameters
+#define MESH_FIRST_IDX	"mesh_first_idx"
+#define NUM_FRAMES		"num_frames"
+
 #define MESH_PREFIX		"mesh_prefix"
 #define MESH_SUFFIX		"mesh_suffix"
-#define MESH_FIRST_IDX	"mesh_first_idx"
+#define POINT_CLOUD		"point_cloud"
+#define COLOR	"color"
+#define RADIUS	"radius"
 
-#define NUM_FRAMES		"num_frames"
+#define MESH_PREFIX2	"mesh_prefix2"
+#define MESH_SUFFIX2	"mesh_suffix2"
+#define POINT_CLOUD2	"point_cloud2"
+#define COLOR2	"color2"
+#define RADIUS2	"radius2"
+
+#define TEMPLATE_PATH	"template_path"
 
 #define IMAGE_PREFIX	"image_prefix"
 #define IMAGE_SUFFIX	"image_suffix"
@@ -74,14 +85,23 @@ namespace parameters {
 			background_colour = { 0.46f, 0.46f, 0.54f, 1.f };
 
 			// I/O parameters
-			//mesh_prefix = "C:/Users/Qi/Desktop/generated/meshes/mesh_";	
-			mesh_prefix = "C:/Users/Qi/Documents/GitHub/_PangaeaResults/low_res_gray/mesh_pyramid/mesh";
-			//mesh_prefix = "C:/Users/Qi/Desktop/generated/templates/cropped/template_12500_";
-			// "C:/Users/Qi/Desktop/generated/meshes/_sphere_";
-			//mesh_suffix = ".ply";
-			mesh_suffix = "_level00.obj";
-			mesh_first_idx = 1;// 180;
+			mesh_first_idx = 1;
 			num_frames = 200;
+
+			mesh_prefix = "C:/Users/Qi/Documents/GitHub/_PangaeaResults/low_res_gray/mesh_pyramid/mesh";
+			mesh_suffix = "_level00.obj";
+			point_cloud = true;
+			color = {0.5, 0.5, 0.5};
+			radius = 0.01;
+
+			mesh_prefix2 = "C:/Users/Qi/Documents/GitHub/_PangaeaResults/low_res_gray/mesh_pyramid/mesh";
+			mesh_suffix2 = "_level00.obj";
+			point_cloud2 = false;
+			color2 = { 0.5, 0.5, 0.5 };
+			radius2 = 0.01;
+
+			template_path = "";
+
 			image_prefix = "C:/Users/Qi/Desktop/generated/images/result_";
 			image_suffix = ".png";
 			image_first_idx = 1;
@@ -113,10 +133,23 @@ namespace parameters {
 		vector<float> background_colour;
 
 		// I/O parameters
-		string mesh_prefix;
-		string mesh_suffix;
 		int mesh_first_idx;
 		int num_frames;
+
+		string mesh_prefix;
+		string mesh_suffix;
+		bool point_cloud;
+		vector<float> color;
+		float radius;
+
+		string mesh_prefix2;
+		string mesh_suffix2;
+		bool point_cloud2;
+		vector<float> color2;
+		float radius2;
+
+		string template_path;
+
 		string image_prefix;
 		string image_suffix;
 		int image_first_idx;
@@ -238,6 +271,51 @@ namespace parameters {
 			if (!fs[MESH_SUFFIX].empty())
 			{
 				fs[MESH_SUFFIX] >> mesh_suffix;
+			}
+
+			if (!fs[POINT_CLOUD].empty())
+			{
+				fs[POINT_CLOUD] >> point_cloud;
+			}
+
+			if (!fs[COLOR].empty())
+			{
+				fs[COLOR] >> color;
+			}
+
+			if (!fs[RADIUS].empty())
+			{
+				fs[RADIUS] >> radius;
+			}
+
+			if (!fs[MESH_PREFIX2].empty())
+			{
+				fs[MESH_PREFIX2] >> mesh_prefix2;
+			}
+
+			if (!fs[MESH_SUFFIX2].empty())
+			{
+				fs[MESH_SUFFIX2] >> mesh_suffix2;
+			}
+
+			if (!fs[POINT_CLOUD2].empty())
+			{
+				fs[POINT_CLOUD2] >> point_cloud2;
+			}
+
+			if (!fs[COLOR2].empty())
+			{
+				fs[COLOR2] >> color2;
+			}
+
+			if (!fs[RADIUS2].empty())
+			{
+				fs[RADIUS2] >> radius2;
+			}
+
+			if (!fs[TEMPLATE_PATH].empty())
+			{
+				fs[TEMPLATE_PATH] >> template_path;
 			}
 
 			if (!fs[MESH_FIRST_IDX].empty())

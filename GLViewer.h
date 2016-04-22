@@ -57,7 +57,9 @@ private:
 	/**** VARIABLES ****/
 
 	/* MAIN VARIABLES */
+	static MyMesh template_mesh;
 	static MyMesh mesh;
+	static MyMesh mesh2;
 	static unsigned int frame_idx;
 
 	static OpenMesh::IO::Options mesh_read_opt;
@@ -82,6 +84,8 @@ private:
 
 	/* DRAWING FUNCTIONS */
 	static void drawModel();
+	static void drawModel(MyMesh &mesh, bool point_cloud,
+		const vector<float> &color, float radius);
 
 	// Save rendered image
 	static void saveRenderedImage();
