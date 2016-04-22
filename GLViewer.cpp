@@ -18,12 +18,6 @@ GLfloat GLViewer::frustum_near;
 GLfloat GLViewer::frustum_far;
 vector<float> GLViewer::eye;
 
-/* LIGHT PARAMETERS */
-vector<float> GLViewer::light_ambient;
-vector<float> GLViewer::light_position;
-vector<float> GLViewer::light_intensity;
-vector<float> GLViewer::background_colour;
-
 bool GLViewer::use_gl_light;
 bool GLViewer::use_sh_light;
 
@@ -73,11 +67,14 @@ void GLViewer::initGLUT(int *argc, char **argv)
 	if (use_gl_light)
 	{
 		/* Enable a single OpenGL light. */
-		glLightfv(GL_LIGHT0, GL_POSITION, light_position.data());
-		glLightfv(GL_LIGHT0, GL_DIFFUSE, light_intensity.data());
-		glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient.data());
+		glLightfv(GL_LIGHT0, GL_POSITION, params.light_position.data());
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, params.light_intensity.data());
+		glLightfv(GL_LIGHT0, GL_SPECULAR, params.light_specular_intensity.data());
+		glLightfv(GL_LIGHT0, GL_AMBIENT, params.light_ambient.data());
 		glEnable(GL_LIGHT0);
 		glEnable(GL_LIGHTING);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, params.material_specular_intensity.data());
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, params.material_specular_shininess);
 	}
 	else
 	{
@@ -87,8 +84,8 @@ void GLViewer::initGLUT(int *argc, char **argv)
 
 	glEnable(GL_COLOR_MATERIAL);
 
-	glClearColor(background_colour[0], background_colour[1],
-		background_colour[2], background_colour[3]);
+	glClearColor(params.background_colour[0], params.background_colour[1],
+		params.background_colour[2], params.background_colour[3]);
 
 	/* Use depth buffering for hidden surface elimination. */
 	glEnable(GL_DEPTH_TEST);
@@ -349,12 +346,6 @@ void GLViewer::initParameters(const char* _filename)
 	frustum_near = params.frustum_near;
 	frustum_far = params.frustum_far;
 	eye = params.eye;
-
-	/* LIGHT PARAMETERS */
-	light_ambient = params.light_ambient;
-	light_position = params.light_position;
-	light_intensity = params.light_intensity;
-	background_colour = params.background_colour;
 
 	use_gl_light = params.use_gl_light;
 	use_sh_light = params.use_sh_light;

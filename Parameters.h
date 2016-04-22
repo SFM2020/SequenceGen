@@ -20,6 +20,9 @@
 #define LIGHT_AMBIENT		"light_ambient"
 #define LIGHT_POSITION		"light_position"
 #define LIGHT_INTENSITY		"light_intensity"
+#define LIGHT_SPECULAR_INTENSITY	"light_specular_intensity"
+#define MATERIAL_SPECULAR_INTENSITY	"material_specular_intensity"
+#define MATERIAL_SPECULAR_SHININESS	"material_specular_shininess"
 #define BACKGROUND_COLOUR	"background_colour"
 #define SH_COEFF_FILENAME	"sh_coeff_filename"
 
@@ -65,6 +68,9 @@ namespace parameters {
 			light_ambient = { 0.1f, 0.1f, 0.1f, 1.f };
 			light_position = { -1.f, 0.f, 1.f, 0.f };
 			light_intensity = { 1.f, 1.f, 1.f, 1.f };
+			light_specular_intensity = { 1.f, 1.f, 1.f, 1.f };
+			material_specular_intensity = { 1.f, 1.f, 1.f, 1.f };
+			material_specular_shininess = 10.f;
 			background_colour = { 0.46f, 0.46f, 0.54f, 1.f };
 
 			// I/O parameters
@@ -101,6 +107,9 @@ namespace parameters {
 		vector<float> light_ambient;
 		vector<float> light_position;
 		vector<float> light_intensity;
+		vector<float> light_specular_intensity;
+		vector<float> material_specular_intensity;
+		float material_specular_shininess;
 		vector<float> background_colour;
 
 		// I/O parameters
@@ -192,6 +201,21 @@ namespace parameters {
 			if (!fs[LIGHT_INTENSITY].empty())
 			{
 				fs[LIGHT_INTENSITY] >> light_intensity;
+			}
+
+			if (!fs[LIGHT_SPECULAR_INTENSITY].empty())
+			{
+				fs[LIGHT_SPECULAR_INTENSITY] >> light_specular_intensity;
+			}
+
+			if (!fs[MATERIAL_SPECULAR_INTENSITY].empty())
+			{
+				fs[MATERIAL_SPECULAR_INTENSITY] >> material_specular_intensity;
+			}
+
+			if (!fs[MATERIAL_SPECULAR_SHININESS].empty())
+			{
+				fs[MATERIAL_SPECULAR_SHININESS] >> material_specular_shininess;
 			}
 
 			if (!fs[BACKGROUND_COLOUR].empty())

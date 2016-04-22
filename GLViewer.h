@@ -40,12 +40,6 @@ private:
 	static GLfloat frustum_far;
 	static vector<float> eye;
 
-	/* LIGHT PARAMETERS */
-	static vector<float> light_ambient;
-	static vector<float> light_position;
-	static vector<float> light_intensity;
-	static vector<float> background_colour;
-
 	static bool use_gl_light;
 	static bool use_sh_light;
 
