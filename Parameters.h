@@ -15,14 +15,20 @@
 #define EYE					"eye"
 
 // Light parameters
-#define USE_GL_LIGHT		"use_gl_light"
 #define USE_SH_LIGHT		"use_sh_light"
-#define LIGHT_AMBIENT		"light_ambient"
-#define LIGHT_POSITION		"light_position"
-#define LIGHT_INTENSITY		"light_intensity"
-#define LIGHT_SPECULAR_INTENSITY	"light_specular_intensity"
+#define USE_GL_LIGHT		"use_gl_light"
+#define LIGHT_AMBIENT0				"light_ambient0"
+#define LIGHT_POSITION0				"light_position0"
+#define LIGHT_INTENSITY0			"light_intensity0"
+#define LIGHT_SPECULAR_INTENSITY0	"light_specular_intensity0"
+#define LIGHT_AMBIENT1				"light_ambient1"
+#define LIGHT_POSITION1				"light_position1"
+#define LIGHT_INTENSITY1			"light_intensity1"
+#define LIGHT_SPECULAR_INTENSITY1	"light_specular_intensity1"
 #define MATERIAL_SPECULAR_INTENSITY	"material_specular_intensity"
 #define MATERIAL_SPECULAR_SHININESS	"material_specular_shininess"
+#define LIGHT_ROTATION		"light_rotation"
+#define LIGHT_INCREMENT		"light_increment"
 #define BACKGROUND_COLOUR	"background_colour"
 #define SH_COEFF_FILENAME	"sh_coeff_filename"
 
@@ -63,14 +69,33 @@ namespace parameters {
 			eye = { 0.f, 0.f, 0.f };//{ 27.5228f, 3.62954f, 0.f};
 
 			// Light parameters
-			use_gl_light = false;
 			use_sh_light = false;
-			light_ambient = { 0.1f, 0.1f, 0.1f, 1.f };
-			light_position = { -1.f, 0.f, 1.f, 0.f };
-			light_intensity = { 1.f, 1.f, 1.f, 1.f };
-			light_specular_intensity = { 1.f, 1.f, 1.f, 1.f };
+
+			use_gl_light = { true, true };
+
+			light_ambient = { 
+				{ 0.1f, 0.1f, 0.1f, 1.f },
+				{ 0.1f, 0.1f, 0.1f, 1.f }
+			};
+			light_position = {
+				{ -1.f, 0.f, 1.f, 0.f },
+				{ -1.f, 0.f, 1.f, 0.f }
+			};
+			light_intensity = {
+				{ 1.f, 1.f, 1.f, 1.f },
+				{ 1.f, 1.f, 1.f, 1.f }
+			};
+			light_specular_intensity = {
+				{ 1.f, 1.f, 1.f, 1.f },
+				{ 1.f, 1.f, 1.f, 1.f }
+			};
+
+			light_rotation = { 0, 0 };
+			light_increment = { 0, 0 };
+
 			material_specular_intensity = { 1.f, 1.f, 1.f, 1.f };
 			material_specular_shininess = 10.f;
+			light_rotation = { (float)(M_PI / 90), (float)(M_PI / 90) };
 			background_colour = { 0.46f, 0.46f, 0.54f, 1.f };
 
 			// I/O parameters
@@ -102,12 +127,15 @@ namespace parameters {
 		vector<float> eye;
 
 		// Light parameters
-		bool use_gl_light;
 		bool use_sh_light;
-		vector<float> light_ambient;
-		vector<float> light_position;
-		vector<float> light_intensity;
-		vector<float> light_specular_intensity;
+
+		vector<int> use_gl_light;
+		vector<vector<float>> light_ambient;
+		vector<vector<float>> light_position;
+		vector<vector<float>> light_intensity;
+		vector<vector<float>> light_specular_intensity;
+		vector<float> light_rotation;
+		vector<float> light_increment;
 		vector<float> material_specular_intensity;
 		float material_specular_shininess;
 		vector<float> background_colour;
@@ -188,24 +216,44 @@ namespace parameters {
 				fs[USE_SH_LIGHT] >> use_sh_light;
 			}
 
-			if (!fs[LIGHT_AMBIENT].empty())
+			if (!fs[LIGHT_AMBIENT0].empty())
 			{
-				fs[LIGHT_AMBIENT] >> light_ambient;
+				fs[LIGHT_AMBIENT0] >> light_ambient[0];
 			}
 
-			if (!fs[LIGHT_POSITION].empty())
+			if (!fs[LIGHT_POSITION0].empty())
 			{
-				fs[LIGHT_POSITION] >> light_position;
+				fs[LIGHT_POSITION0] >> light_position[0];
 			}
 
-			if (!fs[LIGHT_INTENSITY].empty())
+			if (!fs[LIGHT_INTENSITY0].empty())
 			{
-				fs[LIGHT_INTENSITY] >> light_intensity;
+				fs[LIGHT_INTENSITY0] >> light_intensity[0];
 			}
 
-			if (!fs[LIGHT_SPECULAR_INTENSITY].empty())
+			if (!fs[LIGHT_SPECULAR_INTENSITY0].empty())
 			{
-				fs[LIGHT_SPECULAR_INTENSITY] >> light_specular_intensity;
+				fs[LIGHT_SPECULAR_INTENSITY0] >> light_specular_intensity[0];
+			}
+
+			if (!fs[LIGHT_AMBIENT1].empty())
+			{
+				fs[LIGHT_AMBIENT1] >> light_ambient[1];
+			}
+
+			if (!fs[LIGHT_POSITION1].empty())
+			{
+				fs[LIGHT_POSITION1] >> light_position[1];
+			}
+
+			if (!fs[LIGHT_INTENSITY1].empty())
+			{
+				fs[LIGHT_INTENSITY1] >> light_intensity[1];
+			}
+
+			if (!fs[LIGHT_SPECULAR_INTENSITY1].empty())
+			{
+				fs[LIGHT_SPECULAR_INTENSITY1] >> light_specular_intensity[1];
 			}
 
 			if (!fs[MATERIAL_SPECULAR_INTENSITY].empty())
@@ -216,6 +264,16 @@ namespace parameters {
 			if (!fs[MATERIAL_SPECULAR_SHININESS].empty())
 			{
 				fs[MATERIAL_SPECULAR_SHININESS] >> material_specular_shininess;
+			}
+
+			if (!fs[LIGHT_ROTATION].empty())
+			{
+				fs[LIGHT_ROTATION] >> light_rotation;
+			}
+
+			if (!fs[LIGHT_INCREMENT].empty())
+			{
+				fs[LIGHT_INCREMENT] >> light_increment;
 			}
 
 			if (!fs[BACKGROUND_COLOUR].empty())
@@ -244,7 +302,6 @@ namespace parameters {
 			{
 				fs[MESH_FIRST_IDX] >> mesh_first_idx;
 			}
-
 
 			if (!fs[NUM_FRAMES].empty())
 			{

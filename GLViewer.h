@@ -40,6 +40,15 @@ private:
 	static GLfloat frustum_far;
 	static vector<float> eye;
 
+	/* LIGHT PARAMETERS */
+	static vector<vector<float>> light_ambient;
+	static vector<vector<float>> light_position;
+	static vector<vector<float>> light_intensity;
+	static vector<vector<float>> light_specular_intensity;
+	static vector<float>background_colour;
+	static vector<float> light_increment;
+
+
 	static bool use_gl_light;
 	static bool use_sh_light;
 
@@ -79,6 +88,8 @@ private:
 
 	/* GLUT FUNCTIONS */
 	static void display(void);
+	static void modifyLight(const GLenum _light, const size_t _light_idx);
+
 
 	/* DRAWING FUNCTIONS */
 	static void drawModel();

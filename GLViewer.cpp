@@ -18,6 +18,15 @@ GLfloat GLViewer::frustum_near;
 GLfloat GLViewer::frustum_far;
 vector<float> GLViewer::eye;
 
+/* LIGHT PARAMETERS */
+vector<vector<float>> GLViewer::light_ambient;
+vector<vector<float>> GLViewer::light_position;
+vector<vector<float>> GLViewer::light_intensity;
+vector<vector<float>> GLViewer::light_specular_intensity;
+vector<float> GLViewer::background_colour;
+
+vector<float> GLViewer::light_increment;
+
 bool GLViewer::use_gl_light;
 bool GLViewer::use_sh_light;
 
@@ -64,23 +73,44 @@ void GLViewer::initGLUT(int *argc, char **argv)
 
 	glewInit();
 
-	if (use_gl_light)
+	use_gl_light = false;
+
+	if (params.use_gl_light[0])
 	{
 		/* Enable a single OpenGL light. */
-		glLightfv(GL_LIGHT0, GL_POSITION, params.light_position.data());
-		glLightfv(GL_LIGHT0, GL_DIFFUSE, params.light_intensity.data());
-		glLightfv(GL_LIGHT0, GL_SPECULAR, params.light_specular_intensity.data());
-		glLightfv(GL_LIGHT0, GL_AMBIENT, params.light_ambient.data());
+		glLightfv(GL_LIGHT0, GL_POSITION, light_position[0].data());
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, light_intensity[0].data());
+		glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular_intensity[0].data());
+		glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient[0].data());
 		glEnable(GL_LIGHT0);
+
+		use_gl_light = true;
+	}
+
+	if (params.use_gl_light[1])
+	{
+		/* Enable a single OpenGL light. */
+		glLightfv(GL_LIGHT1, GL_POSITION, light_position[1].data());
+		glLightfv(GL_LIGHT1, GL_DIFFUSE, light_intensity[1].data());
+		glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular_intensity[1].data());
+		glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient[1].data());
+		glEnable(GL_LIGHT1);
+
+		use_gl_light = true;
+	}
+
+	if (use_gl_light)
+	{
 		glEnable(GL_LIGHTING);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, params.material_specular_intensity.data());
-		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, params.material_specular_shininess);
 	}
 	else
 	{
 		// Disable opengl lighting and illuminate using SH
 		glDisable(GL_LIGHTING);
 	}
+
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, params.material_specular_intensity.data());
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, params.material_specular_shininess);
 
 	glEnable(GL_COLOR_MATERIAL);
 
@@ -123,6 +153,9 @@ void GLViewer::display(void)
 		gluLookAt(eye[0], eye[1], eye[2],	/* eye */
 			eye[0], eye[1], 1.f,	/* center */
 			0.f, -1.f, 0.f);	/* up is in positive y direction */
+
+		modifyLight(GL_LIGHT0, 0);
+		modifyLight(GL_LIGHT1, 1);
 
 		glPushMatrix();
 		drawModel();
@@ -196,6 +229,39 @@ void GLViewer::drawModel()
 		}
 	}
 	glEnd();
+}
+//=============================================================================
+void GLViewer::modifyLight(const GLenum _light, const size_t _light_idx)
+{
+	if (params.use_gl_light[_light_idx])
+	{
+		light_intensity[_light_idx][0] += light_increment[_light_idx];
+
+		if (light_intensity[_light_idx][0] > 1 
+			|| light_intensity[_light_idx][0] < 0)
+		{
+			light_increment[_light_idx] *= -1;
+			light_intensity[_light_idx][0] += 2 * light_increment[_light_idx];
+		}
+
+		light_intensity[_light_idx][1] += light_increment[_light_idx];
+		light_intensity[_light_idx][2] += light_increment[_light_idx];
+
+		glLightfv(_light, GL_DIFFUSE, light_intensity[_light_idx].data());
+		glLightfv(_light, GL_SPECULAR, light_intensity[_light_idx].data());
+
+		if (params.light_rotation[_light_idx] > 0 
+			|| params.light_rotation[_light_idx] < 0)
+		{
+			light_position[_light_idx][0] = 
+				cos(M_PI - frame_idx * params.light_rotation[_light_idx]);
+			light_position[_light_idx][1] = 
+				sin(frame_idx * params.light_rotation[_light_idx]);
+			light_position[_light_idx][2] = -1;
+
+			glLightfv(_light, GL_POSITION, light_position[_light_idx].data());
+		}
+	}
 }
 //=============================================================================
 void GLViewer::saveRenderedImage()
@@ -347,7 +413,16 @@ void GLViewer::initParameters(const char* _filename)
 	frustum_far = params.frustum_far;
 	eye = params.eye;
 
-	use_gl_light = params.use_gl_light;
+	/* LIGHT PARAMETERS */
+	light_ambient = params.light_ambient;
+	light_position = params.light_position;
+	light_intensity = params.light_intensity;
+	light_specular_intensity = params.light_specular_intensity;
+	background_colour = params.background_colour;
+
+	light_increment = params.light_increment;
+
+	use_gl_light = false;
 	use_sh_light = params.use_sh_light;
 
 	/* FILENAME */
