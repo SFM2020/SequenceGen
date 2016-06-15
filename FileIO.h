@@ -1,12 +1,14 @@
 #pragma once
 
+#include <iostream>
+#include <fstream>
 #include "MyMesh.h"
 //=============================================================================
 int readMesh(MyMesh& _mesh, const char* _filename,
 	OpenMesh::IO::Options _ropt);
-//=============================================================================
-int writeMesh(MyMesh& _mesh, const char* _filename,
-	OpenMesh::IO::Options _wopt);
+// //=============================================================================
+// int writeMesh(MyMesh& _mesh, const char* _filename,
+// 	OpenMesh::IO::Options _wopt);
 //=============================================================================
 int readMatrixXi(Eigen::MatrixXi &_matrix, const char* _filename);
 //=============================================================================

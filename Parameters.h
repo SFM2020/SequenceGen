@@ -29,6 +29,7 @@
 // I/O parameters
 #define MESH_FIRST_IDX	"mesh_first_idx"
 #define NUM_FRAMES		"num_frames"
+#define NUM_DIGITS		"num_digits"
 
 #define MESH_PREFIX		"mesh_prefix"
 #define MESH_SUFFIX		"mesh_suffix"
@@ -87,6 +88,7 @@ namespace parameters {
 			// I/O parameters
 			mesh_first_idx = 1;
 			num_frames = 200;
+			num_digits = 4;
 
 			mesh_prefix = "C:/Users/Qi/Documents/GitHub/_PangaeaResults/low_res_gray/mesh_pyramid/mesh";
 			mesh_suffix = "_level00.obj";
@@ -135,6 +137,7 @@ namespace parameters {
 		// I/O parameters
 		int mesh_first_idx;
 		int num_frames;
+		int num_digits;
 
 		string mesh_prefix;
 		string mesh_suffix;
@@ -157,7 +160,7 @@ namespace parameters {
 
 
 		// Load parameters from an ini file
-		inline void Parameters::load(const std::string &_filename)
+		inline void load(const std::string &_filename)
 		{
 			cv::FileStorage fs(_filename, cv::FileStorage::READ);
 
@@ -330,6 +333,12 @@ namespace parameters {
 			}
 
 
+			if (!fs[NUM_DIGITS].empty())
+			{
+				fs[NUM_DIGITS] >> num_digits;
+			}
+
+
 			if (!fs[IMAGE_PREFIX].empty())
 			{
 				fs[IMAGE_PREFIX] >> image_prefix;
@@ -346,7 +355,7 @@ namespace parameters {
 			}
 		}
 
-		inline void Parameters::save(const std::string &_filename)
+		inline void save(const std::string &_filename)
 		{
 
 		}

@@ -140,7 +140,10 @@ void GLViewer::drawModel()
 {
 	if (frame_idx < num_frames)
 	{
-		string idx = cvtIntToString(mesh_first_idx + frame_idx, 3);
+		int curr_idx = mesh_first_idx + frame_idx;
+
+		string idx = cvtIntToString(curr_idx , 
+			params.num_digits > 0 ? params.num_digits : numDigits(curr_idx));
 
 		string path = mesh_prefix + idx + mesh_suffix;
 
@@ -238,7 +241,10 @@ void GLViewer::saveRenderedImage()
 	cv::Mat img = cv::Mat(image_height, image_width, CV_8UC3, (void*)pixel_data);
 	cv::flip(img, img, 0);
 
-	string idx = cvtIntToString(image_first_idx + frame_idx - 1, 4);
+	int curr_idx = image_first_idx + frame_idx - 1;
+
+	string idx = cvtIntToString(curr_idx, 
+		params.num_digits > 0 ? params.num_digits : numDigits(curr_idx));
 
 	string path = image_prefix + idx + image_suffix;
 	cv::imwrite(path.c_str(), img);

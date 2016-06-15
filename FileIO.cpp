@@ -12,19 +12,19 @@ int readMesh(MyMesh& _mesh, const char* _filename,
 
 	return 0;
 }
-//=============================================================================
-int writeMesh(MyMesh& _mesh, const char* _filename,
-	OpenMesh::IO::Options _wopt)
-{
-	if (!OpenMesh::IO::write_mesh(_mesh, _filename, _wopt))
-	{
-		std::cout << "Could not write file: " << _filename << std::endl << std::endl;
+// //=============================================================================
+// int writeMesh(MyMesh& _mesh, const char* _filename,
+// 	OpenMesh::IO::Options _wopt)
+// {
+// 	if (!OpenMesh::IO::write_mesh(_mesh, _filename, _wopt))
+// 	{
+// 		std::cout << "Could not write file: " << _filename << std::endl << std::endl;
 
-		return -1;
-	}
+// 		return -1;
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 //=============================================================================
 int readMatrixXi(Eigen::MatrixXi &_matrix, const char* _filename)
 {

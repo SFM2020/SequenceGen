@@ -1,0 +1,52 @@
+%YAML:1.0
+
+# Image parameters
+image_width: 1920
+image_height: 1088
+
+# View parameters
+frustum_left: -0.14
+frustum_right: 0.14
+frustum_bottom: -0.1
+frustum_top: 0.1
+frustum_near: 0.2
+frustum_far: 3.0
+eye: [ 0.0, 0.0, 0.0 ]
+eye_center: [ 0.0, 0.0, 2131.0165 ]
+
+# Light parameters
+use_gl_light: 1
+use_sh_light: 0
+light_ambient: [ 0.1, 0.1, 0.1, 1.0 ]
+light_position: [ 0.0, 1.0, 1.0, 0.0 ]
+light_intensity: [ 1.0, 1.0, 1.0, 1.0 ]
+light_specular_intensity: [ 1, 1, 1, 1.0 ]
+material_specular_intensity: [ 0.1, 0.1, 0.1, 1.0 ]
+material_specular_shininess: 50
+background_colour: [ 0.0, 0.0, 0.0, 1.0 ]
+
+# I/O parameters
+# Scene point cloud
+mesh_prefix: '/home/qi/Desktop/result_models/'
+mesh_suffix: 'scene.ply'
+point_cloud: 1
+color: [1, 0.98, 0.81]
+radius: 1e-3
+
+# Object Point cloud
+mesh_prefix2: '/home/qi/Desktop/result_models/'
+mesh_suffix2: 'winnerPose.ply'
+point_cloud2: 1
+color2: [0.24, 1, 0.32]
+radius2: 1e-3
+
+# Template mesh
+template_path: '/home/qi/Desktop/result_models/spraybottle.ply'
+
+mesh_first_idx: 0
+num_frames: 341
+num_digits: 4
+
+image_prefix: '/home/qi/Work/results/SequenceGen/result_models/rgb'
+image_suffix: '.png'
+image_first_idx: 0
