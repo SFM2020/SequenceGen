@@ -115,11 +115,15 @@ void GLViewer::display(void)
 	{
 		saveRenderedImage();
 		createDepthMap(vertices, points2d);
-		angle_idx++;
+		
+		if (params.rotate_camera)
+		{
+			angle_idx++;
+		}
 	}
 
 	if (frame_idx == num_frames 
-		&& (angle_idx == params.camera_rotation_x.size()) )
+		|| (params.rotate_camera && angle_idx == params.camera_rotation_x.size()) )
 	{
 		glutDestroyWindow(window_id);
 	}
@@ -184,10 +188,14 @@ void GLViewer::drawModel()
 		frame_idx++;
 	}
 
-	if (!params.camera_rotation_x.empty())
+	if (params.rotate_camera && !params.camera_rotation_x.empty())
 	{
 		rotateMesh(params.camera_rotation_x[angle_idx], mesh);
 	}
+
+	copyMeshVertices(mesh, vertices);
+	copyMeshFaceNormals(mesh, face_normals);
+	computeImageProjection(vertices, KK, points2d);
 
 	glBegin(GL_TRIANGLES);
 
@@ -207,9 +215,9 @@ void GLViewer::drawModel()
 
 			MyMesh::Color c = mesh.color(*fv_it);
 
-			float red = c[0];
-			float green = c[1];
-			float blue = c[2];
+			float red = ((float)c[0]) / 255.f;
+			float green = ((float)c[1]) / 255.f;
+			float blue = ((float)c[2]) / 255.f;
 
 			//float red = ((float)c[0]) / 255.f;
 			//float green = ((float)c[1]) / 255.f;	
@@ -245,7 +253,10 @@ void GLViewer::saveRenderedImage()
 	cv::Mat img = cv::Mat(image_height, image_width, CV_8UC3, (void*)pixel_data);
 	cv::flip(img, img, 0);
 
-	string idx = cvtIntToString(image_first_idx + angle_idx, 4);
+	int curr_idx = params.rotate_camera ? image_first_idx + angle_idx : 
+		image_first_idx + frame_idx - 1;
+
+	string idx = cvtIntToString(curr_idx, 4);
 
 	string path = image_prefix + idx;
 
@@ -812,10 +823,6 @@ void GLViewer::rotateMesh(const float &_angle, MyMesh &_mesh)
 	}
 
 	_mesh.update_normals();
-
-	copyMeshVertices(mesh, vertices);
-	copyMeshFaceNormals(mesh, face_normals);
-	computeImageProjection(vertices, KK, points2d);
 }
 //=============================================================================
 void GLViewer::createDepthMap(const MatrixXf &_vertices, const MatrixXf &_points2d)
@@ -898,7 +905,10 @@ void GLViewer::createDepthMap(const MatrixXf &_vertices, const MatrixXf &_points
 		depth_pixel[i].clear();
 	}
 
-	string idx = cvtIntToString(image_first_idx + angle_idx, 4);
+	int curr_idx = params.rotate_camera ? image_first_idx + angle_idx : 
+		image_first_idx + frame_idx - 1;
+
+	string idx = cvtIntToString(curr_idx, 4);
 
 	string path = params.depth_prefix + idx + params.depth_suffix;
 

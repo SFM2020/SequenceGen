@@ -42,6 +42,7 @@
 #define CAMERA_ROTATION_X	"camera_rotation_x"
 #define CAMERA_ROTATION_Y	"camera_rotation_y"
 #define CAMERA_ROTATION_Z	"camera_rotation_z"
+#define ROTATE_CAMERA		"rotate_camera"
 
 
 #include <cmath>
@@ -141,6 +142,7 @@ namespace parameters {
 		vector<float> camera_rotation_x;
 		vector<float> camera_rotation_y;
 		vector<float> camera_rotation_z;
+		bool rotate_camera;
 
 		// Load parameters from an ini file
 		inline void load(const std::string &_filename)
@@ -305,6 +307,11 @@ namespace parameters {
 			if (!fs[CAMERA_ROTATION_Z].empty())
 			{
 				fs[CAMERA_ROTATION_Z] >> camera_rotation_z;
+			}
+
+			if (!fs[ROTATE_CAMERA].empty())
+			{
+				fs[ROTATE_CAMERA] >> rotate_camera;
 			}
 		}
 
