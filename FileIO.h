@@ -2,7 +2,9 @@
 
 #include "MyMesh.h"
 
-#include <Eigen\Dense>
+#include <Eigen/Dense>
+#include <iostream>
+#include <fstream> 
 //=============================================================================
 int readMesh(MyMesh& _mesh, const char* _filename,
 	OpenMesh::IO::Options _ropt);

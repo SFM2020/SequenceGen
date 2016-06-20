@@ -143,7 +143,7 @@ namespace parameters {
 		vector<float> camera_rotation_z;
 
 		// Load parameters from an ini file
-		inline void Parameters::load(const std::string &_filename)
+		inline void load(const std::string &_filename)
 		{
 			cv::FileStorage fs(_filename, cv::FileStorage::READ);
 
@@ -308,7 +308,7 @@ namespace parameters {
 			}
 		}
 
-		inline void Parameters::save(const std::string &_filename)
+		inline void save(const std::string &_filename)
 		{
 
 		}

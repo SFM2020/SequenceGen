@@ -28,7 +28,7 @@ int writeMesh(MyMesh& _mesh, const char* _filename,
 //=============================================================================
 int readMatrixXi(Eigen::MatrixXi &_matrix, const char* _filename)
 {
-	std::ifstream ifs(_filename);
+	std::ifstream ifs(_filename, std::ifstream::in);
 
 	int rows;
 	ifs >> rows;
@@ -59,8 +59,7 @@ int readMatrixXi(Eigen::MatrixXi &_matrix, const char* _filename)
 //template <typename T>
 int writeVector(const std::vector<int> &_v, const char* _filename)
 {
-	std::ofstream ofs;
-	ofs.open(_filename, std::ofstream::out | std::ofstream::trunc);
+	std::ofstream ofs(_filename, std::ofstream::out | std::ofstream::trunc);
 	for (int i = 0; i < _v.size(); i++)
 	{
 		ofs << _v[i] << std::endl;
@@ -72,7 +71,7 @@ int writeVector(const std::vector<int> &_v, const char* _filename)
 //=============================================================================
 int readVector(const char* _filename, float* _v, int &_size)
 {
-	std::ifstream ifs(_filename);
+	std::ifstream ifs(_filename, std::ifstream::in);
 
 	ifs >> _size;
 
@@ -89,7 +88,7 @@ int readVector(const char* _filename, float* _v, int &_size)
 //=============================================================================
 int readFloatVector(const char* _filename, std::vector<float> &_v)
 {
-	std::ifstream ifs(_filename);
+	std::ifstream ifs(_filename, std::ifstream::in);
 
 	if (ifs)
 	{
